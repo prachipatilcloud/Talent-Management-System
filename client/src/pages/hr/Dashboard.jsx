@@ -180,7 +180,7 @@ const Dashboard = () => {
             onClick={() => navigate(`/hr/candidates/add`)}
             sx={{
               display: 'flex', alignItems: 'center', gap: 1,
-              px: 2.5, py: 1.25,
+              px: 2.5, py: 1.25, color: 'white',
               bgcolor: PRIMARY, borderRadius: '8px', textTransform: 'none',
               fontWeight: 700, fontSize: '0.875rem',
               cursor: 'pointer',
