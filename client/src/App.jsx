@@ -13,6 +13,8 @@ import AddNotes from './pages/hr/AddNotes'
 import MyInterviews from './pages/interviewer/MyInterviews'
 import InterviewerCandidateProfile from './pages/interviewer/InterviewerCandidateProfile'
 import Dashboard from './pages/interviewer/Dashboard'
+import HRDashboard from './pages/hr/Dashboard'
+
 
 function App() {
   return (
@@ -32,7 +34,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to='candidates' replace />} />
+            <Route index element={<Navigate to='dashboard' replace />} />
+            <Route path='dashboard' element={<HRDashboard />} />
             <Route path='candidates' element={<CandidatesPage />} />
             <Route path='candidates/add' element={<AddCandidate />} />
             <Route path='candidates/edit/:id' element={<EditCandidate />} />
@@ -57,10 +60,10 @@ function App() {
             }
           >
             <Route index element={<Navigate to='dashboard' replace />} />
-            <Route path='dashboard' element={<Dashboard />}/>
-            <Route path='my-interviews' element={<MyInterviews />}/>
-            <Route path='candidates/:id' element={<InterviewerCandidateProfile />}/>
-            
+            <Route path='dashboard' element={<Dashboard />} />
+            <Route path='my-interviews' element={<MyInterviews />} />
+            <Route path='candidates/:id' element={<InterviewerCandidateProfile />} />
+
           </Route>
 
           {/* ── ADMIN ROUTES — reuses same pages ── */}
