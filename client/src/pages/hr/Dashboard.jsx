@@ -191,91 +191,92 @@ const Dashboard = () => {
             + Add Candidate
           </Box>
         </Box>
+
+        {/* KPI stat cards */}
+        <Box sx={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 2.5, mb: 4,
+        }}>
+          {[
+            {
+              icon: <People sx={{ fontSize: 22, color: PRIMARY }} />,
+              iconBg: `${PRIMARY}15`,
+              label: 'Total Candidates',
+              value: totalCandidates,
+              sub: `${statusCounts['Interviewing'] || 0} currently interviewing`,
+              borderColor: PRIMARY,
+            },
+            {
+              icon: <EventAvailable sx={{ fontSize: 22, color: '#f97316' }} />,
+              iconBg: '#fff7ed',
+              label: 'Active Interviews Today',
+              value: activeInterviewsToday,
+              sub: 'candidates scheduled today',
+              borderColor: '#f97316',
+            },
+            {
+              icon: <CheckCircle sx={{ fontSize: 22, color: '#16a34a' }} />,
+              iconBg: '#f0fdf4',
+              label: 'Selected',
+              value: selectedCount,
+              sub: `${statusCounts['On Hold'] || 0} on hold`,
+              borderColor: '#16a34a',
+            },
+          ].map(card => (
+            <Paper key={card.label}
+              elevation={0} sx={{
+                p: 3,
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                borderLeft: `4px solid ${card.borderColor}`,
+                bgcolor: 'white',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                transition: 'all 0.15s',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  transform: 'translateY(-1px)'
+                }
+              }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                mb: 2
+              }}>
+                <Box>
+                  <Typography sx={{
+                    fontSize: '0.6875rem', color: '#94a3b8',
+                    fontWeight: 700, mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.08rem'
+                  }}>
+                    {card.label}
+                  </Typography>
+                  <Typography sx={{
+                    fontSize: '2rem',
+                    fontWeight: 900,
+                    color: '#0f172a',
+                    lineHeight: 1
+                  }}>
+                    {card.value}
+                  </Typography>
+                </Box>
+                <Box sx={{
+                  width: 40, height: 40, borderRadius: '10px',
+                  bgcolor: card.iconBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {card.icon}
+                </Box>
+              </Box>
+              <Typography sx={{
+                fontSize: '0.75rem', color: '#64748b', fontWeight: 500
+              }}>
+                {card.sub}
+              </Typography>
+            </Paper>
+          ))}
+        </Box>
       </Box>
 
-      {/* KPI stat cards */}
-      <Box sx={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 2.5, mb: 4,
-      }}>
-        {[
-          {
-            icon: <People sx={{ fontSize: 22, color: PRIMARY }} />,
-            iconBg: `${PRIMARY}15`,
-            label: 'Total Candidates',
-            value: totalCandidates,
-            sub: `${statusCounts['Interviewing'] || 0} currently interviewing`,
-            borderColor: PRIMARY,
-          },
-          {
-            icon: <EventAvailable sx={{ fontSize: 22, color: '#f97316' }} />,
-            iconBg: '#fff7ed',
-            label: 'Active Interviews Today',
-            value: activeInterviewsToday,
-            sub: 'candidates scheduled today',
-            borderColor: '#f97316',
-          },
-          {
-            icon: <CheckCircle sx={{ fontSize: 22, color: '#16a34a' }} />,
-            iconBg: '#f0fdf4',
-            label: 'Selected',
-            value: selectedCount,
-            sub: `${statusCounts['On Hold'] || 0} on hold`,
-            borderColor: '#16a34a',
-          },
-        ].map(card => (
-          <Paper key={card.label}
-            elevation={0} sx={{
-              p: 3,
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              borderLeft: `4px solid ${card.borderColor}`,
-              bgcolor: 'white',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              transition: 'all 0.15s',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                transform: 'translateY(-1px)'
-              }
-            }}>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              mb: 2
-            }}>
-              <Box>
-                <Typography sx={{
-                  fontSize: '0.6875rem', color: '#94a3b8',
-                  fontWeight: 700, mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.08rem'
-                }}>
-                  {card.label}
-                </Typography>
-                <Typography sx={{
-                  fontSize: '2rem',
-                  fontWeight: 900,
-                  color: '#0f172a',
-                  lineHeight: 1
-                }}>
-                  {card.value}
-                </Typography>
-              </Box>
-              <Box sx={{
-                width: 40, height: 40, borderRadius: '10px',
-                bgcolor: card.iconBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                {card.icon}
-              </Box>
-            </Box>
-            <Typography sx={{
-              fontSize: '0.75rem', color: '#64748b', fontWeight: 500
-            }}>
-              {card.sub}
-            </Typography>
-          </Paper>
-        ))}
-      </Box>
 
 
     </Box>
