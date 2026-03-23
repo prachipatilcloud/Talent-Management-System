@@ -1,0 +1,137 @@
+### Candidate Management with Google Drive Integration
+
+### NOTE: Replace YOUR_TOKEN and CANDIDATE_ID with actual values
+
+### 1. Add Candidate (with Resume Upload)
+POST http://localhost:5000/api/candidates
+Authorization: Bearer YOUR_TOKEN
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="firstName"
+
+John
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="lastName"
+
+Doe
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="email"
+
+john.doe@example.com
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="phone"
+
+9876543210
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="skills"
+
+["JavaScript","React","Node.js"]
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="experience"
+
+3
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="jobRole"
+
+Frontend Developer
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="resume"; filename="resume.pdf"
+Content-Type: application/pdf
+
+< ./test-resume.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+### 2. Get All Candidates
+GET http://localhost:5000/api/candidates
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 3. Get Candidate by ID (includes resume info)
+GET http://localhost:5000/api/candidates/CANDIDATE_ID
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 4. Update Candidate (without changing resume)
+PUT http://localhost:5000/api/candidates/CANDIDATE_ID
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "experience": 4
+}
+
+###
+
+### 5. Update Candidate (with new resume)
+PUT http://localhost:5000/api/candidates/CANDIDATE_ID
+Authorization: Bearer YOUR_TOKEN
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="firstName"
+
+John
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="lastName"
+
+Smith
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="experience"
+
+4
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="resume"; filename="updated-resume.pdf"
+Content-Type: application/pdf
+
+< ./updated-resume.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+### 6. Download/View Resume
+GET http://localhost:5000/api/candidates/CANDIDATE_ID/resume
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 7. Update Candidate Status
+PATCH http://localhost:5000/api/candidates/CANDIDATE_ID/status
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "status": "Shortlisted"
+}
+
+###
+
+### 8. Delete Candidate (also deletes resume from Google Drive)
+DELETE http://localhost:5000/api/candidates/CANDIDATE_ID
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 9. Get Status Counts
+GET http://localhost:5000/api/candidates/stats/status-counts
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 10. Get All Skills
+GET http://localhost:5000/api/candidates/stats/skills
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### 11. Search Candidates with Filters
+GET http://localhost:5000/api/candidates?search=john&status=Applied&jobRole=Developer&experienceLevel=Mid-Level&page=1&limit=10
+Authorization: Bearer YOUR_TOKEN
+
+###

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Google Drive Credentials
+credentials/google-service-account.json
+credentials/oauth-credentials.json
+credentials/token.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary Files
+temp.js
+tmp/
+temp/
+*.tmp
+
+# Build
+dist/
+build/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Uploads (if storing locally)
+uploads/
