@@ -3,7 +3,7 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, ChevronRight, EventAvailable, People } from "@mui/icons-material";
+import { CalendarMonth, CheckCircle, ChevronRight, EventAvailable, People, PersonAdd, RateReview } from "@mui/icons-material";
 
 
 
@@ -282,7 +282,7 @@ const Dashboard = () => {
       <Paper elevation={0} sx={{
         borderRadius: '12px', border: '1px solid #e2e8f0',
         bgcolor: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        overflow: 'hidden'
+        overflow: 'hidden', minWidth: 300, maxWidth: 750, ml: 3, mb: 4,
       }}>
         {/* Header */}
         <Box sx={{
@@ -339,7 +339,116 @@ const Dashboard = () => {
         </Box>
       </Paper>
 
+      {/* Recent Activity Feed */}
+      <Paper elevation={0} sx={{
+        borderRadius: '12px', border: '1px solid #e2e8f0',
+        bgcolor: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        overflow: 'hidden', minWidth: 300, maxWidth: 750, ml: 3, mb: 4,
+      }}>
+        {/* Header */}
+        <Box sx={{
+          px: 3, py: 2, borderBottom: '1px solid #f1f5f9',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
+            Recent Activity Feed
+          </Typography>
+        </Box>
 
+        {/* Activity List */}
+        {recentActivity.length === 0 ? (
+          <Box>
+            <Typography sx={{ fontSize: '2rem' }}>📋</Typography>
+            <Typography sx={{ fontWeight: 600, color: '#0f172a' }}>No recent activity</Typography>
+            <Typography sx={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
+              Add candidates to see activity here.
+            </Typography>
+          </Box>
+        ) : (
+          <Box>
+            {recentActivity.map((candidate, idx) => {
+              const avatarColor = getAvatarColor(candidate.firstName);
+              const initials = `${candidate.firstName?.[0]}${candidate.lastName?.[0]}`;
+              const isLast = idx === recentActivity.length - 1;
+
+              const activityConfig = {
+                'Applied': { icon: <PersonAdd sx={{ fontSize: 18 }} />, bg: '#eff6ff', color: '#1d4ed8', text: 'applied for' },
+                'Shortlisted': { icon: <People sx={{ fontSize: 18 }} />, bg: '#f0fdf4', color: '#15803d', text: 'was shortlisted for' },
+                'Interviewing': { icon: <CalendarMonth sx={{ fontSize: 18 }} />, bg: '#fff7ed', color: '#c2410c', text: 'is interviewing for' },
+                'Selected': { icon: <CheckCircle sx={{ fontSize: 18 }} />, bg: '#f0fdf4', color: '#15803d', text: 'was selected for' },
+                'Rejected': { icon: <RateReview sx={{ fontSize: 18 }} />, bg: '#fff1f2', color: '#be123c', text: 'was rejected for' },
+              }
+
+              const cfg = activityConfig[candidate.status] || activityConfig['Applied'];
+
+              return (
+                <Box key={candidate._id}
+                  onClick={() => navigate(`/hr/candidates/${candidate._id}`)}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 2,
+                    px: 3, py: 2,
+                    borderBottom: isLast ? 'none' : '1px solid #f1f5f9',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    '&:hover': { bgcolor: '#f8fafc' },
+                  }}
+                >
+                  {/* Activity icon */}
+                  <Box key={candidate._id}
+                    onClick={() => navigate(`/hr/candidates/${candidate._id}`)}
+                    sx={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      bgcolor: cfg.bg, color: cfg.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {cfg.icon}
+                  </Box>
+
+                  {/* Text */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#0f172a' }}>
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {candidate.firstName} {candidate.lastName}
+                      </Box>
+                      {' '}{cfg.text}{' '}
+                      <Box component="span" sx={{ color: PRIMARY, fontWeight: 600 }}>
+                        {candidate.jobRole}
+                      </Box>
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8', mt: 0.25 }}>
+                      {formatDateTime(candidate.createdAt)}
+                    </Typography>
+                  </Box>
+
+                  {/* Avatar */}
+                  <Avatar sx={{
+                    width: 32, height: 32, flexShrink: 0,
+                    bgcolor: `${avatarColor}20`, color: avatarColor,
+                    fontSize: '0.8rem', fontWeight: 700,
+                  }}>
+                    {initials}
+                  </Avatar>
+
+                  <ChevronRight sx={{ fontSize: 18, color: '#cbd5e1', flexShrink: 0 }} />
+                </Box>
+              )
+            })}
+
+            {/* View all button */}
+            <Box onClick={() => navigate('/hr/candidates')}
+              sx={{
+                py: 2, textAlign: 'center',
+                borderTop: '1px solid #f1f5f9',
+                fontSize: '0.875rem', fontWeight: 700, color: PRIMARY,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: '#f8fafc' },
+              }}>
+              View All Candidates →
+            </Box>
+          </Box>
+        )}
+      </Paper>
 
     </Box>
   )

@@ -29,7 +29,7 @@ function App() {
           <Route
             path='/hr'
             element={
-              <ProtectedRoute roles={['hr', 'admin']}>
+              <ProtectedRoute roles={['hr']}>
                 <Layout />
               </ProtectedRoute>
             }
@@ -76,6 +76,7 @@ function App() {
             }
           >
             <Route index element={<Navigate to='candidates' replace />} />
+            <Route path='dashboard' element={<HRDashboard />} />
             <Route path='candidates' element={<CandidatesPage />} />
             <Route path='candidates/add' element={<AddCandidate />} />
             <Route path='candidates/edit/:id' element={<EditCandidate />} />
