@@ -321,10 +321,10 @@ const Dashboard = () => {
                     }
                   }}
                 >
-                  <Typography sx={{ fontSize: '1.375rem', fontWeight:900, color: stage.color  }}>
+                  <Typography sx={{ fontSize: '1.375rem', fontWeight: 900, color: stage.color }}>
                     {stage.count}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight:600, color: stage.color, mt:0.25  }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: stage.color, mt: 0.25 }}>
                     {stage.label}
                   </Typography>
                 </Box>
@@ -338,7 +338,7 @@ const Dashboard = () => {
           </Box>
         </Box>
       </Paper>
-      
+
 
 
     </Box>
