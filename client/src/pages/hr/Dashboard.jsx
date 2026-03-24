@@ -1,4 +1,4 @@
-import { Avatar, Box, CircularProgress, colors, Paper, Typography } from "@mui/material";
+import { Avatar, Box, CircularProgress, Paper, Typography } from "@mui/material";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
