@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { CalendarMonth, CheckCircle, ChevronRight, EventAvailable, People, PersonAdd, RateReview } from "@mui/icons-material";
 
 
-
 const PRIMARY = '#3b4eba';
 
 const getAvatarColor = (name) => {
@@ -93,7 +92,6 @@ const Dashboard = () => {
       <CircularProgress sx={{ color: PRIMARY }} />
     </Box>
   )
-
 
   return (
     <Box sx={{
@@ -449,7 +447,6 @@ const Dashboard = () => {
           </Box>
         )}
       </Paper>
-
     </Box>
   )
 }

@@ -73,7 +73,7 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to='candidates' replace />} />
+            <Route index element={<Navigate to='dashboard' replace />} />
             <Route path='dashboard' element={<HRDashboard />} />
             <Route path='candidates' element={<CandidatesPage />} />
             <Route path='candidates/add' element={<AddCandidate />} />
