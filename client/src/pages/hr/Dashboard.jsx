@@ -3,7 +3,7 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, EventAvailable, People } from "@mui/icons-material";
+import { CheckCircle, ChevronRight, EventAvailable, People } from "@mui/icons-material";
 
 
 
@@ -277,6 +277,68 @@ const Dashboard = () => {
         </Box>
       </Box>
 
+      {/* Recruitment Pipeline Overview */}
+
+      <Paper elevation={0} sx={{
+        borderRadius: '12px', border: '1px solid #e2e8f0',
+        bgcolor: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        overflow: 'hidden'
+      }}>
+        {/* Header */}
+        <Box sx={{
+          px: 3, py: 2, borderBottom: '1px solid #f1f5f9',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
+            Recruitment Pipeline Overview
+          </Typography>
+          <Box onClick={() => navigate('/hr/candidates')}
+            sx={{
+              fontSize: '0.75rem', fontWeight: 700, color: PRIMARY,
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.06rem',
+              '&:hover': { textDecoration: 'underline' },
+            }}>
+            View All Candidates
+          </Box>
+        </Box>
+
+        {/* Pipeline Stages */}
+        <Box sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto', pb: 1, maxWidth: 700 }}>
+            {pipeline.map((stage, idx) => (
+              <Box key={stage.label} sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 80, maxWidth: 180 }}>
+                {/* Stage Card */}
+                <Box
+                  onClick={() => navigate(`/hr/candidates?status=${stage.label}`)}
+                  sx={{
+                    flex: 1, p: 1.5, borderRadius: '10px',
+                    bgcolor: stage.bg, borderBottom: `4px solid ${stage.border}`,
+                    textAlign: 'center', cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                >
+                  <Typography sx={{ fontSize: '1.375rem', fontWeight:900, color: stage.color  }}>
+                    {stage.count}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight:600, color: stage.color, mt:0.25  }}>
+                    {stage.label}
+                  </Typography>
+                </Box>
+
+                {/* Arrow between stages */}
+                {idx < pipeline.length - 1 && (
+                  <ChevronRight sx={{ fontSize: 20, color: '#cbd5e1', flexShrink: 0 }} />
+                )}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Paper>
+      
 
 
     </Box>
