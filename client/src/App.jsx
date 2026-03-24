@@ -46,8 +46,6 @@ function App() {
 
             {/* Also allow /hr/schedule-interview without a pre-selected candidate */}
             <Route path='schedule-interview' element={<ScheduleInterview />} />
-
-
           </Route>
 
           {/* ── INTERVIEWER ROUTES ── */}
