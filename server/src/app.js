@@ -10,6 +10,7 @@ import authRoute from './routes/authRoute.js';
 import candidateRoute from './routes/candidateRoute.js';
 import googleDriveRoute from './routes/googleDriveRoute.js';
 import interviewerRoute from './routes/interviewerRoute.js';
+import notificationRoute from './routes/notificationRoute.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/users', userRoute);
 app.use('/api/candidates', candidateRoute);
 app.use('/api/gdrive', googleDriveRoute);
 app.use('/api/interviewer', interviewerRoute);
+app.use('/api/notifications', notificationRoute);
 
 
 export default app;

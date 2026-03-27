@@ -5,7 +5,7 @@ import { getMyInterviews, submitFeedback } from '../controllers/interviewControl
 const router = express.Router();
 
 router.get("/my-interviews", protect, authorize('interviewer', 'admin'), getMyInterviews);
-router.patch('/candidates/:id/rounds/:roundId/feedback', protect, authorize('interviewer'), submitFeedback)
+router.patch('/candidates/:id/rounds/:roundId/feedback', protect, authorize('interviewer', 'hr', 'admin'), submitFeedback)
 
 
 export default router;
