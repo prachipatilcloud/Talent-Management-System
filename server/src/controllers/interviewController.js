@@ -1,5 +1,6 @@
 import Candidate from "../models/Candidate.js";
 import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 export const addInterviewRound = async (req, res, next) => {
     try {
@@ -76,10 +77,25 @@ export const addInterviewRound = async (req, res, next) => {
 
         await candidate.save();
 
+        // ── Send notifications to all HR users about the new interview ──
+        const newRoundObj = candidate.interviewRounds[candidate.interviewRounds.length - 1];
+        const hrUsers = await User.find({ role: 'hr' });
+        
+        for (const hrUser of hrUsers) {
+            await Notification.create({
+                recipient: hrUser._id,
+                type: 'interview_scheduled',
+                title: `Interview Scheduled - ${candidate.firstName} ${candidate.lastName}`,
+                message: `An interview round "${roundName}" has been scheduled for ${candidate.firstName} ${candidate.lastName} on ${new Date(scheduledDate).toLocaleDateString()}.`,
+                candidate: candidate._id,
+                roundId: newRoundObj._id,
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: 'Interview round added successfully',
-            round: candidate.interviewRounds[candidate.interviewRounds.length - 1],
+            round: newRoundObj,
             candidate
         })
 
@@ -165,6 +181,19 @@ export const rescheduleRound = async (req, res, next) => {
 
         await candidate.save();
 
+        // ── Send notifications to all HR users about the rescheduled interview ──
+        const hrUsers = await User.find({ role: 'hr' });
+        for (const hrUser of hrUsers) {
+            await Notification.create({
+                recipient: hrUser._id,
+                type: 'interview_rescheduled',
+                title: `Interview Rescheduled - ${candidate.firstName} ${candidate.lastName}`,
+                message: `The "${round.roundName}" interview for ${candidate.firstName} ${candidate.lastName} has been rescheduled to ${new Date(scheduledDate).toLocaleDateString()}.`,
+                candidate: candidate._id,
+                roundId: round._id,
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: 'Rescheduled successfully',
@@ -245,6 +274,13 @@ export const submitFeedback = async (req, res, next) => {
             message: "Interview Round not found"
         })
 
+        // ── Role-based access control: Only HR can give feedback on Initial Screening ──
+        if (round.roundName === 'Initial Screening' && req.user.role !== 'hr') {
+            return res.status(403).json({
+                success: false,
+                message: "Only HR can provide feedback for Initial Screening round"
+            })
+        }
 
         const isAssigned = round.interviewers?.some(iv => {
             const ivId = typeof iv === 'object' ? iv._id?.toString() : iv?.toString();
