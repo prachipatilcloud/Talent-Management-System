@@ -50,9 +50,9 @@ const LoginPage = () => {
         setLoading(true);
         try {
             const data = await login(form.email, form.password);
-            if (data.user.role === 'admin') navigate('/admin/candidates');
-            else if (data.user.role === 'hr') navigate('/hr/candidates');
-            else navigate('/interviewer/my-interviews');
+            if (data.user.role === 'admin') navigate('/admin/dashboard');
+            else if (data.user.role === 'hr') navigate('/hr/dashboard');
+            else navigate('/interviewer/dashboard');
 
         } catch (err) {
             const msg = err.response?.data?.message || 'Invalid credentials. Please try again.';
