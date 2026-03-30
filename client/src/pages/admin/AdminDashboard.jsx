@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Grid, Table, TableHead, TableBody, TableRow, TableCell, 
+  Box, Typography, Grid, Table, TableHead, TableBody, TableRow, TableCell,  
   Button, Alert, AlertTitle, Chip, Avatar, IconButton, TablePagination, 
   CircularProgress, Paper 
 } from '@mui/material';
@@ -11,6 +11,8 @@ import {
   Work as WorkIcon,
   EventAvailable as EventAvailableIcon,
   RateReview as RateReviewIcon,
+  PersonAdd as PersonAddIcon,
+  BusinessCenter as BusinessCenterIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../api/axios';
@@ -108,9 +110,10 @@ const Dashboard = () => {
     <Box sx={{ height: '100%', bgcolor: '#f6f6f8' }}>
       <Box sx={{ height: 56, bgcolor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, position: 'sticky', top: 0, zIndex: 10 }}>
         <Typography sx={{ fontWeight: '700', color: '#0f172a', fontSize: '15px' }}>Admin Overview</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
           <IconButton size="small"><NotificationsIcon sx={{ fontSize: 20 }} /></IconButton>
-          <Button variant="contained" size="small" sx={{ textTransform: 'none', bgcolor: PRIMARY }}>Add Candidate</Button>
+          <Button variant="contained" size="small" startIcon={<PersonAddIcon sx={{ fontSize: 18 }} />} onClick={() => navigate('/admin/add-interviewer')} sx={{ textTransform: 'none', bgcolor: PRIMARY, fontSize: '12px' }}>Add Interviewer</Button>
+          <Button variant="outlined" size="small" startIcon={<BusinessCenterIcon sx={{ fontSize: 18 }} />} onClick={() => navigate('/admin/add-hr')} sx={{ textTransform: 'none', color: PRIMARY, borderColor: PRIMARY, fontSize: '12px' }}>Add HR</Button>
         </Box>
       </Box>
 
