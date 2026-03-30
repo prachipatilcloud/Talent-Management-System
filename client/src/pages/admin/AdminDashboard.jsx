@@ -140,6 +140,8 @@ const Dashboard = () => {
             <StatCard icon={WorkIcon} title="Selected" value={statusCounts['Selected'] || 0} subtitle={`${statusCounts['On Hold'] || 0} on hold`} />
           </Grid>
         </Grid>
+        
+        <Typography sx={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', mb: 2 }}>Recent Candidate Activity</Typography>
 
         <Paper sx={{ borderRadius: '8px', overflow: 'hidden' }}>
           <Box sx={{ overflowX: 'auto' }}>
