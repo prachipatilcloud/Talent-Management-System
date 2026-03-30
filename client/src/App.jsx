@@ -12,8 +12,9 @@ import ScheduleInterview from './pages/hr/ScheduleInterview'
 import AddNotes from './pages/hr/AddNotes'
 import MyInterviews from './pages/interviewer/MyInterviews'
 import InterviewerCandidateProfile from './pages/interviewer/InterviewerCandidateProfile'
-import Dashboard from './pages/interviewer/Dashboard'
-import HRDashboard from './pages/hr/Dashboard'
+import Dashboard from './pages/interviewer/InterviewerDashboard'
+import HRDashboard from './pages/hr/HRDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
 
 
 function App() {
@@ -64,7 +65,7 @@ function App() {
 
           </Route>
 
-          {/* ── ADMIN ROUTES — reuses same pages ── */}
+          {/* ── ADMIN ROUTES — with custom layout ── */}
           <Route
             path='/admin'
             element={
@@ -72,21 +73,13 @@ function App() {
                 <Layout />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<Navigate to='dashboard' replace />} />
-            <Route path='dashboard' element={<HRDashboard />} />
-            <Route path='candidates' element={<CandidatesPage />} />
-            <Route path='candidates/add' element={<AddCandidate />} />
-            <Route path='candidates/edit/:id' element={<EditCandidate />} />
-            <Route path='candidates/filter' element={<AdvancedFilterPage />} />
-            <Route path='candidates/:id/schedule-interview' element={<ScheduleInterview />} />
-            <Route path='candidates/:id/rounds/:roundId/notes' element={<AddNotes />} />
+            >
 
-            <Route path='schedule-interview' element={<ScheduleInterview />} />
-            <Route path='candidates/:id' element={<CandidateProfile />} />
+          <Route index element={<Navigate to='dashboard' replace />} />
+          <Route path='dashboard' element={<AdminDashboard />} />
+
+          
           </Route>
-
-          <Route path='*' element={<Navigate to='/login' replace />} />
 
         </Routes>
       </AuthProvider>

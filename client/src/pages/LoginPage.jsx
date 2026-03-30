@@ -50,7 +50,7 @@ const LoginPage = () => {
         setLoading(true);
         try {
             const data = await login(form.email, form.password);
-            if (data.user.role === 'admin') navigate('/admin/dashboard');
+            if (data.user.role === 'admin') navigate('/admin');
             else if (data.user.role === 'hr') navigate('/hr/dashboard');
             else navigate('/interviewer/dashboard');
 
