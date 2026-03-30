@@ -265,7 +265,7 @@ export const submitFeedback = async (req, res, next) => {
         const candidate = await Candidate.findById(id);
         if (!candidate) return res.status(404).json({
             success: false,
-            message: "Candidate not found"
+            message: "Candidate not found",
         })
 
         const round = candidate.interviewRounds.id(roundId);

@@ -21,7 +21,7 @@ app.use(cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+}));    
 
 app.use(morgan("dev"));
 app.use(express.json());
@@ -34,6 +34,5 @@ app.use('/api/candidates', candidateRoute);
 app.use('/api/gdrive', googleDriveRoute);
 app.use('/api/interviewer', interviewerRoute);
 app.use('/api/notifications', notificationRoute);
-
 
 export default app;

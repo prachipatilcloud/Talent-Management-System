@@ -7,7 +7,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 const PRIMARY = '#3b4eba';
 
 const navItems = [
-    { label: 'Dashboard', icon: <Dashboard />, path: '/hr/dashboard', roles: ['hr', 'admin'] },
+    { label: 'Dashboard', icon: <Dashboard />, path: '/hr/dashboard', roles: ['hr'] },
     { label: 'Candidates', icon: <People />, path: '/hr/candidates', roles: ['hr', 'admin'] },
     { label: 'Interviews', icon: <CalendarToday />, path: '/hr/schedule-interview', roles: ['hr', 'admin'] },
     { label: 'Dashboard', icon: <Dashboard />, path: '/interviewer/dashboard', roles: ['interviewer'] },
