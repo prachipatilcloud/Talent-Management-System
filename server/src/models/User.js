@@ -22,10 +22,11 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true,
+        required: false,
         validate: {
             validator: function (v) {
-                return /^[6-9]\d{9}$/.test(v);
+                // Only validate if phone is provided
+                return !v || /^[6-9]\d{9}$/.test(v);
             },
             message: "Invalid phone number"
         }

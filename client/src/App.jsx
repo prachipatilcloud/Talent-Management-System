@@ -15,6 +15,8 @@ import InterviewerCandidateProfile from './pages/interviewer/InterviewerCandidat
 import Dashboard from './pages/interviewer/InterviewerDashboard'
 import HRDashboard from './pages/hr/HRDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AddHR from './components/users/AddHR'
+import AddInterviewer from './components/users/AddInterviewer'
 
 
 function App() {
@@ -80,6 +82,8 @@ function App() {
             <Route path='candidates/add' element={<AddCandidate />} />
             <Route path='candidates/edit/:id' element={<EditCandidate />} />
             <Route path='candidates/:id' element={<CandidateProfile />} />
+            <Route path='add-hr' element={<AddHR />} />
+            <Route path='add-interviewer' element={<AddInterviewer />} />
           
           </Route>
 
