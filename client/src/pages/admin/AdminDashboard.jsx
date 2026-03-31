@@ -56,7 +56,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // --- Logic Calculations with Safety Checks ---
+  // ----- Logic Calculations with Safety Checks -----
   
   const safeCandidates = Array.isArray(candidatesData) ? candidatesData : [];
   const total = safeCandidates.length;
@@ -107,7 +107,7 @@ const Dashboard = () => {
   );
 
   return (
-    <Box sx={{ height: '100%', bgcolor: '#f6f6f8' }}>
+    <Box sx={{ height: '100%', bgcolor: '#f6f6f8', overflow:'auto' }}>
       <Box sx={{ height: 56, bgcolor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, position: 'sticky', top: 0, zIndex: 10 }}>
         <Typography sx={{ fontWeight: '700', color: '#0f172a', fontSize: '15px' }}>Admin Overview</Typography>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
@@ -140,7 +140,7 @@ const Dashboard = () => {
             <StatCard icon={WorkIcon} title="Selected" value={statusCounts['Selected'] || 0} subtitle={`${statusCounts['On Hold'] || 0} on hold`} />
           </Grid>
         </Grid>
-        
+
         <Typography sx={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', mb: 2 }}>Recent Candidate Activity</Typography>
 
         <Paper sx={{ borderRadius: '8px', overflow: 'hidden' }}>

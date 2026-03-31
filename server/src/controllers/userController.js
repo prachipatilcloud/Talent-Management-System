@@ -6,10 +6,21 @@ export const createUser = async (req, res, next) => {
             firstName,
             lastName,
             email,
+            phone,
             password,
             role,
             department
         } = req.body;
+
+        // ✅ Validate phone BEFORE saving
+        const normalizedPhone = phone?.replace(/\D/g, '');
+
+        if (!normalizedPhone || !/^[6-9]\d{9}$/.test(normalizedPhone)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid phone number. Must be 10 digits and start with 6-9.',
+            });
+        }
 
         // Check if email already exists
         const existingUser = await User.findOne({ email });
@@ -20,17 +31,24 @@ export const createUser = async (req, res, next) => {
             });
         }
 
-        // 2️⃣ Create new user
+        // ✅ Create user with VALID phone
         const user = await User.create({
-            firstName, lastName, email, password, role, department
+            firstName,
+            lastName,
+            email,
+            phone: normalizedPhone,
+            password,
+            role,
+            department
         });
 
-        // 3️⃣ Remove password from response (extra safety)
+        // Response
         const userResponse = {
             _id: user._id,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
+            phone: user.phone,   // ✅ correct
             role: user.role,
             department: user.department,
             isActive: user.isActive,
@@ -39,14 +57,14 @@ export const createUser = async (req, res, next) => {
 
         return res.status(201).json({
             success: true,
-            message:'User created successfully',
+            message: 'User created successfully',
             data: userResponse,
-        })
+        });
 
     } catch (error) {
         next(error);
     }
-}
+};
 export const getUser = async (req, res, next) => {
     try {
 
@@ -121,69 +139,10 @@ export const getUsers = async (req, res, next) => {
     }
 }
 
-// export const updateUser = async (req, res, next) => {
-//     try {
-//         const {
-//             firstName,
-//             lastName,
-//             email,
-//             password,
-//             role,
-//             department
-//         } = req.body;
-
-//         const user = await User.findById(req.params.id);
-//         const { isActive } = req.body;
-
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: 'User not found',
-//             })
-//         }
-
-//         if (email && email !== user.email) {
-//             const existingUser = await User.findOne({ email });
-//             if (existingUser) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'User wth this email already exists',
-//                 })
-//             }
-//         }
-
-//         if (firstName) user.firstName = firstName;
-//         if (lastName) user.lastName = lastName;
-//         if (email) user.email = email;
-//         if (role) user.role = role;
-//         if (password) user.password = password;
-//         if (department != undefined) user.department = department;
-//         if (isActive != undefined) user.isActive = isActive;
-
-//         await user.save();
-
-//         res.status(200).json({
-//             success: true,
-//             message: 'User updated successfully',
-//             data:{
-//                 _id: user._id,
-//                 firstName: user.firstName,
-//                 lastName: user.lastName,
-//                 email: user.email,
-//                 role: user.role,
-//                 department: user.department,
-//                 isActive: user.isActive,
-//             }
-//         })
-
-//     } catch (error) {
-//         next(error);
-//     }
-// }
 
 export const updateUser = async (req, res, next) => {
     try {
-        const { firstName, lastName, email, password, role, department, isActive } = req.body;
+        const { firstName, lastName, email, phone, password, role, department, isActive } = req.body;
 
         // Find user by ID
         const user = await User.findById(req.params.id);
@@ -205,10 +164,25 @@ export const updateUser = async (req, res, next) => {
             }
         }
 
+        // ✅ Handle phone update
+        if (phone !== undefined) {
+            const normalizedPhone = phone.replace(/\D/g, '');
+
+            if (!/^[6-9]\d{9}$/.test(normalizedPhone)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid phone number. Must be 10 digits and start with 6-9.',
+                });
+            }
+
+            user.phone = normalizedPhone;
+        }
+
         // Update only the fields provided in request body
         if (firstName !== undefined) user.firstName = firstName;
         if (lastName !== undefined) user.lastName = lastName;
         if (email !== undefined) user.email = email;
+
         if (password !== undefined) user.password = password;
         if (role !== undefined) user.role = role;
         if (department !== undefined) user.department = department;
@@ -224,6 +198,7 @@ export const updateUser = async (req, res, next) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                phone: user.phone,
                 role: user.role,
                 department: user.department,
                 isActive: user.isActive,
@@ -239,8 +214,8 @@ export const deleteUser = async (req, res, next) => {
 
     try {
         const user = await User.findById(req.params.id);
-            // .populate('createdBy', 'firstName lastName email')
-            // .populate('interviewRounds.interviewerId', 'firstName lastName email');
+        // .populate('createdBy', 'firstName lastName email')
+        // .populate('interviewRounds.interviewerId', 'firstName lastName email');
 
         if (!user) {
             return res.status(404).json({
