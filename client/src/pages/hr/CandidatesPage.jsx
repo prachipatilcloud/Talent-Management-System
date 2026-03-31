@@ -64,7 +64,6 @@ const CandidatesPage = () => {
   const [sortBy, setSortBy]                 = useState('newest');
   const [menuAnchor, setMenuAnchor]         = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [selected, setSelected]             = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting]             = useState(false);
   const [snackbar, setSnackbar]             = useState({ open: false, message: '', severity: 'success' });
@@ -77,7 +76,7 @@ const CandidatesPage = () => {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (statusFilter) params.append('status', statusFilter);
-      params.append('sortBy', sortBy);
+      params.append('sortby', sortBy);
       params.append('page', page);
       params.append('limit', LIMIT);
 
@@ -136,13 +135,7 @@ const CandidatesPage = () => {
     setSelectedCandidate(null);
   };
 
-  const toggleSelect = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
-  };
 
-  const toggleSelectAll = () => {
-    setSelected(selected.length === candidates.length ? [] : candidates.map(c => c._id));
-  };
 
   const activeFilters = [
     ...(search       ? [{ label: `Search: ${search}`,       key: 'search' }] : []),
@@ -297,14 +290,6 @@ const CandidatesPage = () => {
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                  <TableCell padding="checkbox" sx={{ pl: 2, borderBottom: '1px solid #e2e8f0' }}>
-                    <input
-                      type="checkbox"
-                      checked={selected.length === candidates.length && candidates.length > 0}
-                      onChange={toggleSelectAll}
-                      style={{ accentColor: PRIMARY, width: 16, height: 16 }}
-                    />
-                  </TableCell>
                   {['Candidate Name', 'Status', 'Current Role', 'Experience', 'Top Skills', 'Added'].map(h => (
                     <TableCell key={h} sx={{
                       fontSize: '0.7rem', fontWeight: 700, color: '#64748b',
@@ -335,26 +320,17 @@ const CandidatesPage = () => {
                   const sc          = statusConfig[c.status] || statusConfig.Applied;
                   const initials    = getInitials(c.firstName, c.lastName);
                   const avatarColor = getAvatarColor(c.firstName);
-                  const isSelected  = selected.includes(c._id);
 
                   return (
                     <TableRow
-                      key={c._id} hover selected={isSelected}
+                      key={c._id} hover
                       onClick={() => navigate(`${basePath}/candidates/${c._id}`)}
                       sx={{
                         cursor: 'pointer',
                         '&:hover': { bgcolor: 'rgba(59,78,186,0.03)' },
-                        '&.Mui-selected': { bgcolor: 'rgba(59,78,186,0.05)' },
                         borderBottom: '1px solid #f1f5f9',
                       }}
                     >
-                      <TableCell padding="checkbox" sx={{ pl: 2 }} onClick={e => e.stopPropagation()}>
-                        <input
-                          type="checkbox" checked={isSelected}
-                          onChange={() => toggleSelect(c._id)}
-                          style={{ accentColor: PRIMARY, width: 16, height: 16 }}
-                        />
-                      </TableCell>
 
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
