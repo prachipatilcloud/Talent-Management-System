@@ -118,12 +118,12 @@ const Dashboard = () => {
       </Box>
 
       <Box sx={{ p: 3 }}>
-        {pendingFeedback > 0 && (
+        {/* {pendingFeedback > 0 && (
           <Alert severity="warning" sx={{ mb: 3, borderRadius: '8px' }}>
             <AlertTitle sx={{ fontWeight: 600 }}>Action Required</AlertTitle>
             {pendingFeedback} interview feedbacks are overdue.
           </Alert>
-        )}
+        )} */}
 
         {/* Updated Grid for MUI v2 Migration */}
         <Box sx={{ 
