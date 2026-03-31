@@ -95,8 +95,8 @@ const AdvancedFilterPage = () => {
 
       if (search) params.append('search', search);
 
-      // Status: backend supports one status at a time
-      if (selectedStatuses.length === 1) params.append('status', selectedStatuses[0]);
+      // Status: append each status separately for multiple selection
+      selectedStatuses.forEach(status => params.append('status', status));
 
       // ── FIX: send `experienceLevel` label string, NOT minExp/maxExp ──
       // The backend's getAllCandidates reads req.query.experienceLevel and
@@ -261,13 +261,6 @@ const AdvancedFilterPage = () => {
                 </Box>
               ))}
             </Box>
-            {selectedStatuses.length > 1 && (
-              <Box sx={{ mt: 1.5, p: 1.25, bgcolor: '#fefce8', borderRadius: '6px', border: '1px solid #fef08a' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#a16207', fontWeight: 600 }}>
-                  Select one status to filter. Multiple selections show all results.
-                </Typography>
-              </Box>
-            )}
           </Box>
 
           <Divider sx={{ borderColor: '#f1f5f9' }} />

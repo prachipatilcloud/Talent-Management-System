@@ -89,7 +89,11 @@ export const getAllCandidates = async (req, res, next) => {
             query.$text = { $search: search };
         }
 
-        if (status)  query.status  = status;
+        if (status) {
+            // Handle multiple status values: ?status=Applied&status=Shortlisted
+            const statusArray = Array.isArray(status) ? status : [status];
+            query.status = { $in: statusArray };
+        }
         if (jobRole) query.jobRole = { $regex: jobRole, $options: 'i' };
         
         if (experienceLevel) {
