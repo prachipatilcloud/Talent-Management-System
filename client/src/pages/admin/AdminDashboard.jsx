@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Grid, Table, TableHead, TableBody, TableRow, TableCell,  
+  Box, Typography, Table, TableHead, TableBody, TableRow, TableCell,  
   Button, Alert, AlertTitle, Chip, Avatar, IconButton, TablePagination, 
   CircularProgress, Paper 
 } from '@mui/material';
@@ -126,20 +126,25 @@ const Dashboard = () => {
         )}
 
         {/* Updated Grid for MUI v2 Migration */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
+          gap: 2, 
+          mb: 3 
+        }}>
+          <Box>
             <StatCard icon={GroupIcon} title="Total Candidates" value={total} subtitle={`${statusCounts['Interviewing'] || 0} interviewing`} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </Box>
+          <Box>
             <StatCard icon={EventAvailableIcon} title="Interviews Today" value={interviewsToday} subtitle="Scheduled for today" />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </Box>
+          <Box>
             <StatCard icon={RateReviewIcon} title="Pending Feedback" value={pendingFeedback} subtitle="Requires attention" />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </Box>
+          <Box>
             <StatCard icon={WorkIcon} title="Selected" value={statusCounts['Selected'] || 0} subtitle={`${statusCounts['On Hold'] || 0} on hold`} />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         <Typography sx={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', mb: 2 }}>Recent Candidate Activity</Typography>
 
