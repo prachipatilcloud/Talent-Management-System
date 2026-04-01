@@ -11,6 +11,8 @@ import candidateRoute from './routes/candidateRoute.js';
 import googleDriveRoute from './routes/googleDriveRoute.js';
 import interviewerRoute from './routes/interviewerRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
+import resumeRoute from './routes/resumeRoute.js';
+import parserRoute from './routes/parserRoute.js';
 
 const app = express();
 
@@ -34,5 +36,7 @@ app.use('/api/candidates', candidateRoute);
 app.use('/api/gdrive', googleDriveRoute);
 app.use('/api/interviewer', interviewerRoute);
 app.use('/api/notifications', notificationRoute);
+app.use("/api/resumes", resumeRoute);
+app.use("/api/parser", parserRoute);
 
 export default app;
