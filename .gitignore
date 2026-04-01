@@ -4,3 +4,6 @@ server/token.json
 server/client_secret_.json
 server/src/config/service-account.json
 logs
+__pycache__
+venv/
+uploads

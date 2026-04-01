@@ -82,6 +82,7 @@ export const getAllCandidates = async (req, res, next) => {
         const { search, status, jobRole, sortby, skills, experienceLevel, page = 1, limit = 10 } = req.query;
         
         let query = {};
+        const andConditions = [];
         
         // OPTIMIZED: Use MongoDB text search instead of regex for general search
         if (search) {
@@ -92,19 +93,38 @@ export const getAllCandidates = async (req, res, next) => {
         if (status) {
             // Handle multiple status values: ?status=Applied&status=Shortlisted
             const statusArray = Array.isArray(status) ? status : [status];
-            query.status = { $in: statusArray };
+            andConditions.push({ status: { $in: statusArray } });
         }
-        if (jobRole) query.jobRole = { $regex: jobRole, $options: 'i' };
+        
+        if (jobRole) {
+            andConditions.push({ jobRole: { $regex: jobRole, $options: 'i' } });
+        }
         
         if (experienceLevel) {
             const range = getExperienceRange(experienceLevel);
-            if (range) query.experience = { $gte: range.min, $lte: range.max };
+            if (range) andConditions.push({ experience: { $gte: range.min, $lte: range.max } });
         }
         
-        // OPTIMIZED: Skills filter with exact match for better performance
+        // ✅ UPDATED: Skills filter - Search from BOTH manual AND parsed sources
+        // Properly combined with other filters using $and and $or
         if (skills) {
-            const skillsArray = skills.split(',').map(s => s.trim());
-            query.skills = { $in: skillsArray };
+            const skillsArray = skills.split(',').map(s => s.trim().toLowerCase());
+            
+            // Search skills in both sources (manual and parsed)
+            const skillsOrCondition = {
+                $or: [
+                    { 'skillsSources.manual': { $in: skillsArray } },
+                    { 'skillsSources.parsed': { $in: skillsArray } },
+                    // Fallback: also search in the combined skills array (for backward compatibility)
+                    { skills: { $in: skillsArray } }
+                ]
+            };
+            andConditions.push(skillsOrCondition);
+        }
+
+        // Merge all conditions with $and if we have multiple filters
+        if (andConditions.length > 0) {
+            query.$and = andConditions;
         }
 
         let sortOption = { createdAt: -1 };

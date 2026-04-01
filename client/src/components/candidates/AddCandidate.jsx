@@ -1,8 +1,8 @@
-import { Box, Button, Chip, Divider, FormControl, IconButton, InputLabel, MenuItem, Paper, Select, TextField, Typography, CircularProgress } from "@mui/material"
+import { Box, Button, Chip, Divider, FormControl, IconButton, InputLabel, MenuItem, Paper, Select, TextField, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Accordion, AccordionSummary, AccordionDetails, Alert } from "@mui/material"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
-import { Add, ChevronLeft, Close, CloudUpload } from "@mui/icons-material";
+import { Add, ChevronLeft, Close, CloudUpload, ExpandMore, Visibility } from "@mui/icons-material";
 
 const PRIMARY = '#1334ec';
 
@@ -54,7 +54,7 @@ const AddCandidate = () => {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '',
     phone: '', jobRole: '', experience: '',
-    status: 'Applied', resumeUrl: '',
+    status: 'Applied',
   });
 
   const [errors, setErrors] = useState({});
@@ -63,6 +63,12 @@ const AddCandidate = () => {
   const [resumeFile, setResumeFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [parsedData, setParsedData] = useState(null);
+  const [experiences, setExperiences] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [parseError, setParseError] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleChange = (field) => (e) => {
     let value = e.target.value;
@@ -96,11 +102,92 @@ const AddCandidate = () => {
     setSkills(prev => prev.filter(s => s !== skill));
   };
 
+  // Helper to normalize skills_used (could be string or array from LLM)
+  const normalizeSkillsArray = (val) => {
+    if (Array.isArray(val)) return val.filter(s => typeof s === 'string' && s.trim());
+    if (typeof val === 'string' && val.trim()) return val.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  // ✅ NEW: Parse resume and auto-fill form
+  const parseResumeFile = async (file) => {
+    if (!file) return;
+
+    setParsing(true);
+    setParseError('');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8001/parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        setParseError(result.error || 'Failed to parse resume');
+        setParsing(false);
+        return;
+      }
+
+      const data = result.data;
+      console.log('✅ Parsed resume data:', JSON.stringify(data, null, 2));
+
+      // Auto-fill form fields
+      const nameParts = (data.name || '').trim().split(/\s+/);
+      setForm(prev => ({
+        ...prev,
+        firstName: nameParts[0] || prev.firstName,
+        lastName: nameParts.slice(1).join(' ') || prev.lastName,
+        email: data.email || prev.email,
+        phone: data.phone ? String(data.phone).replace(/\D/g, '').slice(-10) : prev.phone,
+        jobRole: data.target_role || prev.jobRole,
+      }));
+
+      // Add skills from parsed data
+      const parsedSkills = normalizeSkillsArray(data.skills);
+      if (parsedSkills.length > 0) {
+        setSkills(prev => [...new Set([...prev, ...parsedSkills])]);
+      }
+
+      // Store experience with normalized skills_used
+      if (data.experience && Array.isArray(data.experience)) {
+        const normalizedExp = data.experience.map(exp => ({
+          ...exp,
+          skills_used: normalizeSkillsArray(exp.skills_used),
+        }));
+        setExperiences(normalizedExp);
+      }
+
+      // Store projects with normalized skills_used
+      if (data.projects && Array.isArray(data.projects)) {
+        const normalizedProj = data.projects.map(proj => ({
+          ...proj,
+          skills_used: normalizeSkillsArray(proj.skills_used),
+        }));
+        setProjects(normalizedProj);
+      }
+
+      setParsedData(data);
+    } catch (error) {
+      console.error('❌ Parse error:', error);
+      setParseError('Failed to parse resume: ' + error.message);
+    } finally {
+      setParsing(false);
+    }
+  };
+
   const handleFileDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer?.files?.[0] || e.target.files?.[0];
-    if (file) setResumeFile(file);
+    if (file) {
+      setResumeFile(file);
+      // Parse resume immediately on upload
+      parseResumeFile(file);
+    }
   };
 
   const validate = () => {
@@ -132,11 +219,11 @@ const AddCandidate = () => {
       formData.append('phone', form.phone.trim());
       formData.append('jobRole', form.jobRole.trim());
       formData.append('experience', form.experience);
-      formData.append('status', form.status);
       formData.append('skills', JSON.stringify(skills));
       formData.append('resume', resumeFile);
 
-      await API.post('/candidates', formData, {
+      // ✅ Use parser endpoint for automatic parsing
+      await API.post('/parser/parse-candidate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -185,6 +272,98 @@ const AddCandidate = () => {
           </Box>
 
           <Box sx={{ px: 5, pb: 5 }}>
+
+            {/* ── Resume & Documents ── */}
+            <SectionTitle>Resume & Documents</SectionTitle>
+            <Box
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleFileDrop}
+              onClick={() => document.getElementById('resume-upload').click()}
+              sx={{
+                position: 'relative',
+                border: `2px dashed ${dragOver ? PRIMARY : '#e2e8f0'}`,
+                borderRadius: '12px', p: 6, mb: 2.5,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                bgcolor: dragOver ? 'rgba(19,52,236,0.03)' : '#f8fafc',
+                cursor: 'pointer', transition: 'all 0.2s',
+                '&:hover': { bgcolor: 'rgba(19,52,236,0.02)', borderColor: PRIMARY },
+              }}
+            >
+              <input id="resume-upload" type="file" accept=".pdf,.doc,.docx"
+                style={{ display: 'none' }} onChange={handleFileDrop} />
+              <Box sx={{
+                width: 64, height: 64, borderRadius: '50%',
+                bgcolor: 'rgba(19,52,236,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                mb: 2, transition: 'transform 0.2s',
+                '&:hover': { transform: 'scale(1.1)' },
+              }}>
+                <CloudUpload sx={{ fontSize: 30, color: PRIMARY }} />
+              </Box>
+              {parsing && (
+                <Box sx={{
+                  position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.85)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: '12px', zIndex: 2,
+                }}>
+                  <CircularProgress size={32} sx={{ color: PRIMARY, mb: 1.5 }} />
+                  <Typography sx={{ fontWeight: 600, color: PRIMARY, fontSize: '0.85rem' }}>
+                    Parsing Resume...
+                  </Typography>
+                  <Typography sx={{ color: '#64748b', fontSize: '0.75rem', mt: 0.25 }}>
+                    Extracting details with AI
+                  </Typography>
+                </Box>
+              )}
+              {resumeFile ? (
+                <>
+                  <Typography sx={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>
+                    {resumeFile.name}
+                  </Typography>
+                  <Typography sx={{ color: '#64748b', fontSize: '0.8rem', mt: 0.5 }}>
+                    {(resumeFile.size / 1024 / 1024).toFixed(2)} MB — click to replace
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography sx={{ fontWeight: 600, color: '#374151', fontSize: '0.9rem' }}>
+                    Click or drag resume file to this area to upload
+                  </Typography>
+                  <Typography sx={{ color: '#94a3b8', fontSize: '0.8125rem', mt: 0.5 }}>
+                    Support for PDF, DOCX (Max 10MB)
+                  </Typography>
+                </>
+              )}
+            </Box>
+
+            {/* Parse status & Preview button */}
+            {parseError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setParseError('')}>
+                {parseError}
+              </Alert>
+            )}
+            {parsedData && !parsing && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Resume parsed successfully — form fields have been auto-filled.
+              </Alert>
+            )}
+            {resumeFile && (
+              <Box sx={{ display: 'flex', gap: 1.5, mb: 2.5 }}>
+                <Button
+                  startIcon={<Visibility />}
+                  onClick={(e) => { e.stopPropagation(); setPreviewOpen(true); }}
+                  sx={{
+                    textTransform: 'none', fontWeight: 600, fontSize: '0.85rem',
+                    color: PRIMARY, border: `1px solid ${PRIMARY}`,
+                    borderRadius: '8px', px: 2.5, py: 0.75,
+                    '&:hover': { bgcolor: 'rgba(19,52,236,0.04)' },
+                  }}
+                >
+                  Preview Resume
+                </Button>
+              </Box>
+            )}
 
             {/* ── Personal Information ── */}
             <SectionTitle>Personal Information</SectionTitle>
@@ -318,6 +497,7 @@ const AddCandidate = () => {
                     autoComplete="off"
                     sx={{
                       flex: 1, minWidth: 80, border: 'none', outline: 'none',
+
                       fontSize: '0.875rem', bgcolor: 'transparent', color: '#374151',
                       '&::placeholder': { color: '#94a3b8' },
                     }}
@@ -336,54 +516,131 @@ const AddCandidate = () => {
 
             <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
 
-            {/* ── Resume & Documents ── */}
-            <SectionTitle>Resume & Documents</SectionTitle>
-            <Box
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleFileDrop}
-              onClick={() => document.getElementById('resume-upload').click()}
-              sx={{
-                position: 'relative',
-                border: `2px dashed ${dragOver ? PRIMARY : '#e2e8f0'}`,
-                borderRadius: '12px', p: 6, mb: 2.5,
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                bgcolor: dragOver ? 'rgba(19,52,236,0.03)' : '#f8fafc',
-                cursor: 'pointer', transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'rgba(19,52,236,0.02)', borderColor: PRIMARY },
-              }}
-            >
-              <input id="resume-upload" type="file" accept=".pdf,.doc,.docx"
-                style={{ display: 'none' }} onChange={handleFileDrop} />
-              <Box sx={{
-                width: 64, height: 64, borderRadius: '50%',
-                bgcolor: 'rgba(19,52,236,0.08)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                mb: 2, transition: 'transform 0.2s',
-                '&:hover': { transform: 'scale(1.1)' },
-              }}>
-                <CloudUpload sx={{ fontSize: 30, color: PRIMARY }} />
+            {/* ── Work Experience ── */}
+            {(experiences.length > 0 || parsing) && (
+              <Box sx={{ mb: 4 }}>
+                <SectionTitle>Work Experience</SectionTitle>
+                {parsing && experiences.length === 0 && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Parsing resume... Extracting work experience
+                  </Alert>
+                )}
+                {experiences.map((exp, idx) => (
+                  <Accordion key={idx} defaultExpanded={idx === 0} sx={{ mb: 1.5, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
+                        <Box>
+                          <Typography sx={{ fontWeight: 600, color: PRIMARY }}>
+                            {exp.role || exp.title || exp.position || 'Position'}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>
+                            {exp.company} {exp.duration && `• ${exp.duration}`}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ backgroundColor: '#ffffff' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {exp.description && (
+                          <Box>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>
+                              Description
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.875rem', color: '#64748b', whiteSpace: 'pre-wrap' }}>
+                              {exp.description}
+                            </Typography>
+                          </Box>
+                        )}
+                        {exp.skills_used && exp.skills_used.length > 0 && (
+                          <Box>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>
+                              Skills Used
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                              {exp.skills_used.map((skill, i) => (
+                                <Chip
+                                  key={i}
+                                  label={skill}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#dbeafe', color: '#1d4ed8', fontWeight: 600,
+                                    fontSize: '0.75rem', borderRadius: '999px',
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
               </Box>
-              {resumeFile ? (
-                <>
-                  <Typography sx={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>
-                    {resumeFile.name}
-                  </Typography>
-                  <Typography sx={{ color: '#64748b', fontSize: '0.8rem', mt: 0.5 }}>
-                    {(resumeFile.size / 1024 / 1024).toFixed(2)} MB — click to replace
-                  </Typography>
-                </>
-              ) : (
-                <>
-                  <Typography sx={{ fontWeight: 600, color: '#374151', fontSize: '0.9rem' }}>
-                    Click or drag resume file to this area to upload
-                  </Typography>
-                  <Typography sx={{ color: '#94a3b8', fontSize: '0.8125rem', mt: 0.5 }}>
-                    Support for PDF, DOCX (Max 10MB)
-                  </Typography>
-                </>
-              )}
-            </Box>
+            )}
+
+            {/* ── Projects ── */}
+            {(projects.length > 0 || parsing) && (
+              <Box sx={{ mb: 4 }}>
+                <SectionTitle>Projects</SectionTitle>
+                {parsing && projects.length === 0 && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Parsing resume... Extracting projects
+                  </Alert>
+                )}
+                {projects.map((proj, idx) => (
+                  <Accordion key={idx} defaultExpanded={idx === 0} sx={{ mb: 1.5, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
+                        <Box>
+                          <Typography sx={{ fontWeight: 600, color: PRIMARY }}>
+                            {proj.name || proj.title || 'Project'}
+                          </Typography>
+                          {proj.date && (
+                            <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>
+                              {proj.date}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ backgroundColor: '#ffffff' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {proj.description && (
+                          <Box>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>
+                              Description
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.875rem', color: '#64748b', whiteSpace: 'pre-wrap' }}>
+                              {proj.description}
+                            </Typography>
+                          </Box>
+                        )}
+                        {proj.skills_used && proj.skills_used.length > 0 && (
+                          <Box>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>
+                              Technologies & Tools
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                              {proj.skills_used.map((skill, i) => (
+                                <Chip
+                                  key={i}
+                                  label={skill}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#f5f3ff', color: '#7c3aed', fontWeight: 600,
+                                    fontSize: '0.75rem', borderRadius: '999px',
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            )}
 
             <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
 
@@ -450,6 +707,85 @@ const AddCandidate = () => {
         </Typography>
 
       </Box>
+
+      {/* ── Resume Preview Dialog ── */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px', overflow: 'hidden',
+            height: '85vh', display: 'flex', flexDirection: 'column',
+          },
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          px: 3, py: 2, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+        }}>
+          <Box>
+            <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '1.1rem' }}>
+              Resume Preview
+            </Typography>
+            {resumeFile && (
+              <Typography sx={{ color: '#64748b', fontSize: '0.8rem' }}>
+                {resumeFile.name}
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={() => setPreviewOpen(false)} size="small">
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ flex: 1, p: 0, overflow: 'hidden' }}>
+          {resumeFile && resumeFile.type === 'application/pdf' ? (
+            <iframe
+              src={URL.createObjectURL(resumeFile)}
+              title="Resume Preview"
+              style={{ width: '100%', height: '100%', border: 'none' }}
+            />
+          ) : resumeFile ? (
+            <Box sx={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', height: '100%', p: 4, color: '#64748b',
+            }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                Preview not available for this file type
+              </Typography>
+              <Typography sx={{ fontSize: '0.85rem' }}>
+                {resumeFile.name} ({(resumeFile.size / 1024 / 1024).toFixed(2)} MB)
+              </Typography>
+              <Button
+                variant="outlined"
+                sx={{ mt: 2, textTransform: 'none', borderRadius: '8px' }}
+                onClick={() => {
+                  const url = URL.createObjectURL(resumeFile);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = resumeFile.name;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download File
+              </Button>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e2e8f0' }}>
+          <Button
+            onClick={() => setPreviewOpen(false)}
+            sx={{
+              textTransform: 'none', fontWeight: 600, color: '#64748b',
+              borderRadius: '8px',
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

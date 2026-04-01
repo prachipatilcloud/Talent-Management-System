@@ -6,7 +6,7 @@ const feedbackSchema = new mongoose.Schema({
         min: 1,
         max: 5,
     },
-    recommendation:{
+    recommendation: {
         type: String,
         enum: ['Hire', 'No Hire', 'Maybe']
     },
@@ -181,6 +181,80 @@ const candidateSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true          // which HR added this candidate
+    },
+
+    // ✅ Parsed Resume Data Integration
+    parsedResumeData: {
+        name: {
+            type: String,
+            default: null
+        },
+        aiExtractedSkills: {
+            type: [String],
+            default: []
+        },
+        aiExtractedExperience: [{
+            company: {
+                type: String,
+                default: null
+            },
+            role: {
+                type: String,
+                default: null
+            },
+            duration: {
+                type: String,
+                default: null
+            },
+            description: {
+                type: String,
+                default: null
+            },
+            skills_used: {
+                type: [String],
+                default: []
+            }
+        }],
+        aiExtractedProjects: [{
+            name: {
+                type: String,
+                default: null
+            },
+            description: {
+                type: String,
+                default: null
+            },
+            skills_used: {
+                type: [String],
+                default: []
+            }
+        }],
+        targetRole: {
+            type: String,
+            default: null
+        },
+        parsedAt: {
+            type: Date,
+            default: null
+        }
+    },
+
+    // ✅ Skill Sources Tracking
+    skillsSources: {
+        manual: {
+            type: [String],
+            default: []
+        },
+        parsed: {
+            type: [String],
+            default: []
+        }
+    },
+
+    // ✅ Flag for Parsed Data Availability
+    hasParseData: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
@@ -190,6 +264,9 @@ candidateSchema.index({ skills: 1 });
 candidateSchema.index({ jobRole: 1 });
 candidateSchema.index({ status: 1 });
 candidateSchema.index({ firstName: 'text', lastName: 'text', skills: 'text', jobRole: 'text' });
+candidateSchema.index({ 'skillsSources.manual': 1 });
+candidateSchema.index({ 'skillsSources.parsed': 1 });
+candidateSchema.index({ hasParseData: 1 });
 
 // candidateSchema.methods.getExperienceLevel = function () {
 //   if (this.experience < 2) return 'Junior';
