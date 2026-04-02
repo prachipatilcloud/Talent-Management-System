@@ -108,6 +108,9 @@ export const parseAndCreateCandidate = async (req, res, next) => {
         skills: allSkills,
         experience: experience || parsedData.experience?.length || 0,
         jobRole: jobRole || parsedData.target_role || '',
+        github: req.body.github || parsedData.github || null,
+        linkedin: req.body.linkedin || parsedData.linkedin || null,
+        portfolio: req.body.portfolio || parsedData.portfolio || null,
         resume: {
           fileName: req.file.originalname,
           driveFileId: driveFileId || '',
@@ -145,6 +148,9 @@ export const parseAndCreateCandidate = async (req, res, next) => {
       candidate.lastName = lastName.trim();
       candidate.experience = experience || parsedData.experience?.length || candidate.experience;
       candidate.jobRole = jobRole || parsedData.target_role || candidate.jobRole;
+      candidate.github = req.body.github || parsedData.github || candidate.github;
+      candidate.linkedin = req.body.linkedin || parsedData.linkedin || candidate.linkedin;
+      candidate.portfolio = req.body.portfolio || parsedData.portfolio || candidate.portfolio;
       
       // Update skills combining both sources
       candidate.skills = allSkills;
