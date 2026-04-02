@@ -28,6 +28,6 @@ router.post('/:id/interviews', authorize('admin', 'hr'), addInterviewRound);
 
 router.put('/:id', authorize('admin', 'hr'), upload.single('resume'), updateCandidate)
 router.patch('/:id/status', authorize('admin', 'hr'), updateCandidateStatus)
-router.delete('/:id', authorize('admin'), deleteCandidate)
+router.delete('/:id', authorize('admin', 'hr'), deleteCandidate)
 
 export default router;

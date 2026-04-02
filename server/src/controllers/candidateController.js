@@ -54,21 +54,48 @@ export const addCandidate = async (req, res, next) => {
             return res.status(500).json({ success: false, message: 'Failed to upload resume to Google Drive: ' + error.message });
         }
 
-        const candidate = await Candidate.create({
+        // Parse skills and parsed data from form
+        const parsedSkills = skills ? JSON.parse(skills) : [];
+        const parsedExperience = req.body.parsedExperience ? JSON.parse(req.body.parsedExperience) : [];
+        const parsedProjects = req.body.parsedProjects ? JSON.parse(req.body.parsedProjects) : [];
+
+        const candidateData = {
             firstName,
             lastName,
             email: email.toLowerCase(),
             phone: normalizedPhone,
-            skills: skills ? JSON.parse(skills) : [],
+            skills: parsedSkills,
             experience,
             jobRole,
+            github: req.body.github || null,
+            linkedin: req.body.linkedin || null,
+            portfolio: req.body.portfolio || null,
             resume: {
                 fileName: req.file.originalname,
                 driveFileId,
                 url: fileUrl,
             },
             addedBy: req.user._id,
-        });
+        };
+
+        // Save AI-parsed resume data if available
+        if (parsedExperience.length > 0 || parsedProjects.length > 0) {
+            candidateData.parsedResumeData = {
+                name: req.body.parsedName || '',
+                aiExtractedSkills: parsedSkills,
+                aiExtractedExperience: parsedExperience,
+                aiExtractedProjects: parsedProjects,
+                targetRole: req.body.parsedTargetRole || jobRole,
+                parsedAt: new Date(),
+            };
+            candidateData.skillsSources = {
+                manual: [],
+                parsed: parsedSkills,
+            };
+            candidateData.hasParseData = true;
+        }
+
+        const candidate = await Candidate.create(candidateData);
 
         res.status(201).json({ success: true, message: 'Candidate added successfully', candidate });
 

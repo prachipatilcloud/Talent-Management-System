@@ -7,7 +7,7 @@ def call_ollama(prompt):
         response = requests.post(
             "http://localhost:11434/api/generate",
             json={
-                "model": "phi3",
+                "model": "mistral:7b",
                 "prompt": prompt,
                 "stream": False,    
                 "options": {

@@ -1,8 +1,8 @@
 import express from 'express';
 import multer from 'multer';
 import { protect, authorize } from '../middlewares/auth.js';
-import { 
-  parseAndCreateCandidate, 
+import {
+  parseAndCreateCandidate,
   getParsedResumeData,
   reparseCandidate,
   getDebugCandidateData
@@ -22,7 +22,7 @@ const upload = multer({
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
-    
+
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {

@@ -229,8 +229,15 @@ const AddCandidate = () => {
       if (form.linkedin.trim()) formData.append('linkedin', form.linkedin.trim());
       if (form.portfolio.trim()) formData.append('portfolio', form.portfolio.trim());
 
-      // ✅ Use parser endpoint for automatic parsing
-      await API.post('/parser/parse-candidate', formData, {
+      // Send already-parsed data so the server doesn't need to re-parse
+      if (parsedData) {
+        formData.append('parsedExperience', JSON.stringify(experiences));
+        formData.append('parsedProjects', JSON.stringify(projects));
+        formData.append('parsedName', parsedData.name || '');
+        formData.append('parsedTargetRole', parsedData.target_role || form.jobRole);
+      }
+
+      await API.post('/candidates', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
