@@ -148,6 +148,24 @@ const candidateSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
+
+    // Social / Portfolio Links
+    github: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+    linkedin: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+    portfolio: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+
     resume: {
         fileName: {
             type: String,
@@ -227,6 +245,14 @@ const candidateSchema = new mongoose.Schema({
             skills_used: {
                 type: [String],
                 default: []
+            },
+            github_link: {
+                type: String,
+                default: null
+            },
+            live_demo: {
+                type: String,
+                default: null
             }
         }],
         targetRole: {

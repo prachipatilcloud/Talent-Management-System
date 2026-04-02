@@ -122,7 +122,7 @@ export const searchParsedSkills = async (skills) => {
 export const isParserServiceHealthy = async () => {
   try {
     const response = await axios.get(
-      `${PARSER_SERVICE_URL}/resumes`,
+      `${PARSER_SERVICE_URL}/docs`,
       { timeout: 5000 }
     );
     return response.status === 200;

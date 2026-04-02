@@ -13,6 +13,7 @@ import {
     Star, StarHalf, StarBorder,
     OpenInNew, InsertDriveFile, CalendarMonth,
     Edit, Videocam, Business, Close,
+    GitHub, LinkedIn, Language,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -404,6 +405,75 @@ const CandidateProfile = () => {
                                                 {skill}
                                             </Box>
                                         ))}
+                                    </Box>
+                                </>
+                            )}
+
+                            {/* Social & Portfolio Links */}
+                            {(candidate.github || candidate.linkedin || candidate.portfolio) && (
+                                <>
+                                    <Divider sx={{ borderColor: '#f1f5f9', my: 2 }} />
+                                    <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
+                                        Social & Portfolio
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {candidate.github && (
+                                            <Box
+                                                component="a" href={candidate.github} target="_blank" rel="noopener noreferrer"
+                                                sx={{
+                                                    display: 'flex', alignItems: 'center', gap: 1.25,
+                                                    textDecoration: 'none', color: '#475569',
+                                                    px: 1.5, py: 1, borderRadius: '8px',
+                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
+                                                    transition: 'all 0.15s',
+                                                    '&:hover': { bgcolor: '#f1f5f9', borderColor: '#cbd5e1', color: '#24292e' },
+                                                }}
+                                            >
+                                                <GitHub sx={{ fontSize: 16, color: '#24292e' }} />
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {candidate.github.replace(/^https?:\/\/(www\.)?/, '')}
+                                                </Typography>
+                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
+                                            </Box>
+                                        )}
+                                        {candidate.linkedin && (
+                                            <Box
+                                                component="a" href={candidate.linkedin} target="_blank" rel="noopener noreferrer"
+                                                sx={{
+                                                    display: 'flex', alignItems: 'center', gap: 1.25,
+                                                    textDecoration: 'none', color: '#475569',
+                                                    px: 1.5, py: 1, borderRadius: '8px',
+                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
+                                                    transition: 'all 0.15s',
+                                                    '&:hover': { bgcolor: '#eff6ff', borderColor: '#bfdbfe', color: '#0077B5' },
+                                                }}
+                                            >
+                                                <LinkedIn sx={{ fontSize: 16, color: '#0077B5' }} />
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {candidate.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
+                                                </Typography>
+                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
+                                            </Box>
+                                        )}
+                                        {candidate.portfolio && (
+                                            <Box
+                                                component="a" href={candidate.portfolio} target="_blank" rel="noopener noreferrer"
+                                                sx={{
+                                                    display: 'flex', alignItems: 'center', gap: 1.25,
+                                                    textDecoration: 'none', color: '#475569',
+                                                    px: 1.5, py: 1, borderRadius: '8px',
+                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
+                                                    transition: 'all 0.15s',
+                                                    '&:hover': { bgcolor: '#f5f3ff', borderColor: '#ddd6fe', color: '#7c3aed' },
+                                                }}
+                                            >
+                                                <Language sx={{ fontSize: 16, color: '#7c3aed' }} />
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {candidate.portfolio.replace(/^https?:\/\/(www\.)?/, '')}
+                                                </Typography>
+                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
+                                            </Box>
+                                        )}
                                     </Box>
                                 </>
                             )}
@@ -855,7 +925,171 @@ const CandidateProfile = () => {
                         </Box>
                     )}
                 </Paper>
-            </Box>
+
+                    {/* ═══════ PARSED EXPERIENCE & PROJECTS ═══════ */}
+                    {candidate.parsedResumeData && (
+                        <Paper elevation={0} sx={{
+                            borderRadius: '12px', border: '1px solid #e2e8f0',
+                            bgcolor: 'white', p: 3, mt: 2.5,
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                        }}>
+                            {/* AI Experience Section */}
+                            {candidate.parsedResumeData.aiExtractedExperience?.length > 0 && (
+                                <Box sx={{ mb: 3.5 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                                        <Box sx={{
+                                            width: 32, height: 32, borderRadius: '8px',
+                                            bgcolor: 'rgba(29,78,216,0.1)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <Typography sx={{ fontSize: '1rem' }}>💼</Typography>
+                                        </Box>
+                                        <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
+                                            Work Experience
+                                        </Typography>
+                                        <Box sx={{
+                                            ml: 'auto', px: 1.5, py: 0.3, borderRadius: '999px',
+                                            bgcolor: '#eff6ff', border: '1px solid #bfdbfe',
+                                            fontSize: '0.7rem', fontWeight: 700, color: '#1d4ed8',
+                                        }}>
+                                            AI Parsed
+                                        </Box>
+                                    </Box>
+                                    {candidate.parsedResumeData.aiExtractedExperience.map((exp, idx) => (
+                                        <Box key={idx} sx={{
+                                            p: 2.5, mb: 1.5, borderRadius: '10px',
+                                            bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
+                                        }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                                <Box>
+                                                    <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem' }}>
+                                                        {exp.role || 'Position'}
+                                                    </Typography>
+                                                    <Typography sx={{ fontSize: '0.8125rem', color: '#64748b' }}>
+                                                        {exp.company}{exp.duration && ` • ${exp.duration}`}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                            {exp.description && (
+                                                <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.7, mb: 1.5 }}>
+                                                    {exp.description}
+                                                </Typography>
+                                            )}
+                                            {exp.skills_used?.length > 0 && (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {exp.skills_used.map((skill, i) => (
+                                                        <Box key={i} component="span" sx={{
+                                                            px: 1, py: 0.3, borderRadius: '6px',
+                                                            bgcolor: '#dbeafe', color: '#1d4ed8',
+                                                            fontSize: '0.7rem', fontWeight: 600,
+                                                        }}>
+                                                            {skill}
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+
+                            {/* AI Projects Section */}
+                            {candidate.parsedResumeData.aiExtractedProjects?.length > 0 && (
+                                <Box>
+                                    {candidate.parsedResumeData.aiExtractedExperience?.length > 0 && (
+                                        <Divider sx={{ borderColor: '#f1f5f9', mb: 3 }} />
+                                    )}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                                        <Box sx={{
+                                            width: 32, height: 32, borderRadius: '8px',
+                                            bgcolor: 'rgba(124,58,237,0.1)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <Typography sx={{ fontSize: '1rem' }}>🚀</Typography>
+                                        </Box>
+                                        <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
+                                            Projects
+                                        </Typography>
+                                        <Box sx={{
+                                            ml: 'auto', px: 1.5, py: 0.3, borderRadius: '999px',
+                                            bgcolor: '#f5f3ff', border: '1px solid #ddd6fe',
+                                            fontSize: '0.7rem', fontWeight: 700, color: '#7c3aed',
+                                        }}>
+                                            AI Parsed
+                                        </Box>
+                                    </Box>
+                                    {candidate.parsedResumeData.aiExtractedProjects.map((proj, idx) => (
+                                        <Box key={idx} sx={{
+                                            p: 2.5, mb: 1.5, borderRadius: '10px',
+                                            bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
+                                        }}>
+                                            <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem', mb: 0.5 }}>
+                                                {proj.name || 'Project'}
+                                            </Typography>
+                                            {proj.description && (
+                                                <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.7, mb: 1.5 }}>
+                                                    {proj.description}
+                                                </Typography>
+                                            )}
+                                            {proj.skills_used?.length > 0 && (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                                                    {proj.skills_used.map((skill, i) => (
+                                                        <Box key={i} component="span" sx={{
+                                                            px: 1, py: 0.3, borderRadius: '6px',
+                                                            bgcolor: '#f5f3ff', color: '#7c3aed',
+                                                            fontSize: '0.7rem', fontWeight: 600,
+                                                        }}>
+                                                            {skill}
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                                                {proj.github_link && (
+                                                    <Button
+                                                        size="small"
+                                                        startIcon={<GitHub sx={{ fontSize: 15 }} />}
+                                                        endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
+                                                        onClick={() => window.open(proj.github_link, '_blank')}
+                                                        sx={{
+                                                            textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
+                                                            color: '#24292e', bgcolor: '#f6f8fa', border: '1px solid #d1d5da',
+                                                            borderRadius: '6px', px: 1.5, py: 0.4,
+                                                            '&:hover': { bgcolor: '#e1e4e8' },
+                                                        }}
+                                                    >
+                                                        GitHub Repo
+                                                    </Button>
+                                                )}
+                                                {proj.live_demo && (
+                                                    <Button
+                                                        size="small"
+                                                        startIcon={<Language sx={{ fontSize: 15 }} />}
+                                                        endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
+                                                        onClick={() => window.open(proj.live_demo, '_blank')}
+                                                        sx={{
+                                                            textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
+                                                            color: '#7c3aed', bgcolor: '#f5f3ff', border: '1px solid #ddd6fe',
+                                                            borderRadius: '6px', px: 1.5, py: 0.4,
+                                                            '&:hover': { bgcolor: '#ede9fe' },
+                                                        }}
+                                                    >
+                                                        Live Demo
+                                                    </Button>
+                                                )}
+                                                {!proj.github_link && !proj.live_demo && (
+                                                    <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                                        No project links available
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+                        </Paper>
+                    )}
+                </Box>
 
             {/* ══════════════════════════════════════════════════════════
                 RESCHEDULE MODAL

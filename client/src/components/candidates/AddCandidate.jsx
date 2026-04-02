@@ -2,7 +2,7 @@ import { Box, Button, Chip, Divider, FormControl, IconButton, InputLabel, MenuIt
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
-import { Add, ChevronLeft, Close, CloudUpload, ExpandMore, Visibility } from "@mui/icons-material";
+import { Add, ChevronLeft, Close, CloudUpload, ExpandMore, Visibility, GitHub, LinkedIn, Language, OpenInNew } from "@mui/icons-material";
 
 const PRIMARY = '#1334ec';
 
@@ -55,6 +55,7 @@ const AddCandidate = () => {
     firstName: '', lastName: '', email: '',
     phone: '', jobRole: '', experience: '',
     status: 'Applied',
+    github: '', linkedin: '', portfolio: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -144,6 +145,9 @@ const AddCandidate = () => {
         email: data.email || prev.email,
         phone: data.phone ? String(data.phone).replace(/\D/g, '').slice(-10) : prev.phone,
         jobRole: data.target_role || prev.jobRole,
+        github: data.github || prev.github,
+        linkedin: data.linkedin || prev.linkedin,
+        portfolio: data.portfolio || prev.portfolio,
       }));
 
       // Add skills from parsed data
@@ -221,6 +225,9 @@ const AddCandidate = () => {
       formData.append('experience', form.experience);
       formData.append('skills', JSON.stringify(skills));
       formData.append('resume', resumeFile);
+      if (form.github.trim()) formData.append('github', form.github.trim());
+      if (form.linkedin.trim()) formData.append('linkedin', form.linkedin.trim());
+      if (form.portfolio.trim()) formData.append('portfolio', form.portfolio.trim());
 
       // ✅ Use parser endpoint for automatic parsing
       await API.post('/parser/parse-candidate', formData, {
@@ -399,6 +406,45 @@ const AddCandidate = () => {
             </Box>
 
             <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
+
+            {/* ── Social & Portfolio Links ── */}
+            <SectionTitle>Social & Portfolio Links</SectionTitle>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
+              <TextField
+                label="GitHub"
+                placeholder="https://github.com/username"
+                value={form.github}
+                onChange={handleChange('github')}
+                fullWidth size="small" sx={inputSx}
+                autoComplete="off"
+                InputProps={{
+                  startAdornment: <GitHub sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />,
+                }}
+              />
+              <TextField
+                label="LinkedIn"
+                placeholder="https://linkedin.com/in/username"
+                value={form.linkedin}
+                onChange={handleChange('linkedin')}
+                fullWidth size="small" sx={inputSx}
+                autoComplete="off"
+                InputProps={{
+                  startAdornment: <LinkedIn sx={{ fontSize: 18, color: '#0077B5', mr: 1 }} />,
+                }}
+              />
+              <TextField
+                label="Portfolio / Website"
+                placeholder="https://yoursite.dev"
+                value={form.portfolio}
+                onChange={handleChange('portfolio')}
+                fullWidth size="small"
+                autoComplete="off"
+                sx={{ ...inputSx, gridColumn: '1 / -1' }}
+                InputProps={{
+                  startAdornment: <Language sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />,
+                }}
+              />
+            </Box>
 
             {/* ── Professional Background ── */}
             <SectionTitle>Professional Background</SectionTitle>
@@ -635,6 +681,46 @@ const AddCandidate = () => {
                             </Box>
                           </Box>
                         )}
+                        {/* Project Links */}
+                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                          {proj.github_link && (
+                            <Button
+                              size="small"
+                              startIcon={<GitHub sx={{ fontSize: 16 }} />}
+                              endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                              onClick={() => window.open(proj.github_link, '_blank')}
+                              sx={{
+                                textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
+                                color: '#24292e', bgcolor: '#f6f8fa', border: '1px solid #d1d5da',
+                                borderRadius: '6px', px: 1.5,
+                                '&:hover': { bgcolor: '#e1e4e8' },
+                              }}
+                            >
+                              GitHub Repo
+                            </Button>
+                          )}
+                          {proj.live_demo && (
+                            <Button
+                              size="small"
+                              startIcon={<Language sx={{ fontSize: 16 }} />}
+                              endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                              onClick={() => window.open(proj.live_demo, '_blank')}
+                              sx={{
+                                textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
+                                color: '#7c3aed', bgcolor: '#f5f3ff', border: '1px solid #ddd6fe',
+                                borderRadius: '6px', px: 1.5,
+                                '&:hover': { bgcolor: '#ede9fe' },
+                              }}
+                            >
+                              Live Demo
+                            </Button>
+                          )}
+                          {!proj.github_link && !proj.live_demo && (
+                            <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                              No project links available
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
                     </AccordionDetails>
                   </Accordion>
