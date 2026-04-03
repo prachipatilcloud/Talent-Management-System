@@ -1,12 +1,17 @@
 import {
   Box, Button, Chip, Divider, FormControl, IconButton,
   InputLabel, MenuItem, Paper, Select, TextField,
-  Typography, CircularProgress
+  Typography, CircularProgress, Accordion, AccordionSummary, AccordionDetails,
+  Alert
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../../api/axios";
-import { Add, ChevronLeft, Close, CloudUpload, Download, OpenInNew, Edit as EditIcon, InsertDriveFile } from "@mui/icons-material";
+import {
+  Add, ChevronLeft, Close, CloudUpload, Download, OpenInNew,
+  Edit as EditIcon, InsertDriveFile, GitHub, LinkedIn, Language,
+  ExpandMore, Visibility, PlayArrow
+} from "@mui/icons-material";
 
 const PRIMARY = '#1334ec';
 
@@ -57,6 +62,7 @@ const EditCandidate = () => {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '',
     phone: '', jobRole: '', experience: '', status: 'Applied',
+    github: '', linkedin: '', portfolio: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -68,6 +74,8 @@ const EditCandidate = () => {
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
+  const [experiences, setExperiences] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   // ── Fetch candidate on mount ──────────────────────────────────
   useEffect(() => {
@@ -84,9 +92,14 @@ const EditCandidate = () => {
           jobRole: c.jobRole || '',
           experience: c.experience?.toString() || '',
           status: c.status || 'Applied',
+          github: c.github || '',
+          linkedin: c.linkedin || '',
+          portfolio: c.portfolio || '',
         });
 
         setSkills(c.skills || []);
+        setExperiences(c.parsedResumeData?.aiExtractedExperience || []);
+        setProjects(c.parsedResumeData?.aiExtractedProjects || []);
 
         if (c.resume?.fileName) {
           setExistingResume({
@@ -184,7 +197,10 @@ const EditCandidate = () => {
       fd.append('experience', Number(form.experience));
       fd.append('status', form.status);
       fd.append('skills', JSON.stringify(skills));
-      if (resumeFile) fd.append('resume', resumeFile);  // only if replacing
+      if (form.github.trim()) fd.append('github', form.github.trim());
+      if (form.linkedin.trim()) fd.append('linkedin', form.linkedin.trim());
+      if (form.portfolio.trim()) fd.append('portfolio', form.portfolio.trim());
+      if (resumeFile) fd.append('resume', resumeFile);
 
       await API.put(`/candidates/${id}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -243,105 +259,6 @@ const EditCandidate = () => {
           </Box>
 
           <Box sx={{ px: 5, pb: 5 }}>
-
-            {/* ── Personal Information ── */}
-            <SectionTitle>Personal Information</SectionTitle>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
-              <TextField label="First Name" value={form.firstName} onChange={handleChange('firstName')}
-                error={!!errors.firstName} helperText={errors.firstName} fullWidth size="small" sx={inputSx} />
-              <TextField label="Last Name" value={form.lastName} onChange={handleChange('lastName')}
-                error={!!errors.lastName} helperText={errors.lastName} fullWidth size="small" sx={inputSx} />
-              <TextField label="Email Address" type="email" value={form.email} onChange={handleChange('email')}
-                error={!!errors.email} helperText={errors.email} fullWidth size="small" sx={inputSx} />
-              <TextField label="Phone Number" placeholder="9876543210" type="tel"
-                value={form.phone} onChange={handleChange('phone')}
-                fullWidth size="small" sx={inputSx} inputProps={{ maxLength: 10 }} />
-            </Box>
-
-            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
-
-            {/* ── Professional Background ── */}
-            <SectionTitle>Professional Background</SectionTitle>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
-
-              <TextField label="Target Role" placeholder="e.g. Senior Frontend Engineer"
-                value={form.jobRole} onChange={handleChange('jobRole')}
-                error={!!errors.jobRole} helperText={errors.jobRole} fullWidth size="small" sx={inputSx} />
-
-              {/* Experience */}
-              <Box sx={{ position: 'relative' }}>
-                <TextField
-                  label="Years of Experience" placeholder="e.g. 4"
-                  value={form.experience} onChange={handleExperienceChange}
-                  type="number"
-                  inputProps={{ min: 0, max: 50, style: { paddingRight: form.experience !== '' ? '85px' : '12px' } }}
-                  fullWidth size="small" error={!!errors.experience}
-                  helperText={errors.experience || '0–2 → Junior · 3–5 → Mid · 6–10 → Senior · 10+ → Lead'}
-                  sx={{
-                    ...inputSx,
-                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': { display: 'none' },
-                    '& input[type=number]': { MozAppearance: 'textfield' },
-                  }}
-                />
-                {form.experience !== '' && (() => {
-                  const level = getExperienceLevel(form.experience);
-                  return level ? (
-                    <Box sx={{
-                      position: 'absolute', right: 14, top: '27px', transform: 'translateY(-90%)',
-                      px: 1.25, py: 0.25, borderRadius: '999px',
-                      bgcolor: level.bg, color: level.color,
-                      fontSize: '0.7rem', fontWeight: 700, pointerEvents: 'none',
-                    }}>
-                      {level.label}
-                    </Box>
-                  ) : null;
-                })()}
-              </Box>
-
-              {/* Skills */}
-              <Box sx={{ gridColumn: '1 / -1' }}>
-                <Typography sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', mb: 0.75 }}>
-                  Skills & Tech Stack
-                </Typography>
-                <Box sx={{
-                  minHeight: 48, px: 1.5, py: 1, borderRadius: '8px', border: '1px solid #cbd5e1',
-                  display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center',
-                  '&:focus-within': { borderColor: PRIMARY, boxShadow: `0 0 0 2px ${PRIMARY}30` },
-                }}>
-                  {skills.map((skill, i) => {
-                    const col = skillColors[i % skillColors.length];
-                    return (
-                      <Chip key={skill} label={skill} onDelete={() => removeSkill(skill)}
-                        deleteIcon={<Close sx={{ fontSize: '13px !important' }} />} size="small"
-                        sx={{
-                          bgcolor: col.bg, color: col.color, fontWeight: 700,
-                          fontSize: '0.75rem', borderRadius: '999px',
-                          '& .MuiChip-deleteIcon': { color: col.color, opacity: 0.7, '&:hover': { opacity: 1 } },
-                        }} />
-                    );
-                  })}
-                  <Box component="input" value={skillInput}
-                    onChange={(e) => setSkillInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addSkill(); } }}
-                    placeholder={skills.length === 0 ? 'Add skill...' : ''}
-                    sx={{
-                      flex: 1, minWidth: 80, border: 'none', outline: 'none',
-                      fontSize: '0.875rem', bgcolor: 'transparent', color: '#374151',
-                      '&::placeholder': { color: '#94a3b8' },
-                    }} />
-                  {skillInput && (
-                    <IconButton size="small" onClick={addSkill} sx={{ color: PRIMARY, p: 0.25 }}>
-                      <Add sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  )}
-                </Box>
-                <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', mt: 0.5 }}>
-                  Press Enter or comma to add a skill
-                </Typography>
-              </Box>
-            </Box>
-
-            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
 
             {/* ── Resume & Documents ── */}
             <SectionTitle>Resume & Documents</SectionTitle>
@@ -482,6 +399,192 @@ const EditCandidate = () => {
                     </Typography>
                   </>
                 )}
+              </Box>
+            )}
+            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
+
+            {/* ── Personal Information ── */}
+            <SectionTitle>Personal Information</SectionTitle>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
+              <TextField label="First Name" value={form.firstName} onChange={handleChange('firstName')}
+                error={!!errors.firstName} helperText={errors.firstName} fullWidth size="small" sx={inputSx} />
+              <TextField label="Last Name" value={form.lastName} onChange={handleChange('lastName')}
+                error={!!errors.lastName} helperText={errors.lastName} fullWidth size="small" sx={inputSx} />
+              <TextField label="Email Address" type="email" value={form.email} onChange={handleChange('email')}
+                error={!!errors.email} helperText={errors.email} fullWidth size="small" sx={inputSx} />
+              <TextField label="Phone Number" placeholder="9876543210" type="tel"
+                value={form.phone} onChange={handleChange('phone')}
+                fullWidth size="small" sx={inputSx} inputProps={{ maxLength: 10 }} />
+            </Box>
+
+            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
+
+            {/* ── Social & Portfolio Links ── */}
+            <SectionTitle>Social & Portfolio Links</SectionTitle>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
+              <TextField
+                label="GitHub" placeholder="https://github.com/username"
+                value={form.github} onChange={handleChange('github')}
+                fullWidth size="small" sx={inputSx}
+                InputProps={{ startAdornment: <GitHub sx={{ fontSize: 18, color: '#64748b', mr: 1 }} /> }}
+              />
+              <TextField
+                label="LinkedIn" placeholder="https://linkedin.com/in/username"
+                value={form.linkedin} onChange={handleChange('linkedin')}
+                fullWidth size="small" sx={inputSx}
+                InputProps={{ startAdornment: <LinkedIn sx={{ fontSize: 18, color: '#0077B5', mr: 1 }} /> }}
+              />
+              <TextField
+                label="Portfolio / Website" placeholder="https://yoursite.dev"
+                value={form.portfolio} onChange={handleChange('portfolio')}
+                fullWidth size="small" sx={{ ...inputSx, gridColumn: '1 / -1' }}
+                InputProps={{ startAdornment: <Language sx={{ fontSize: 18, color: '#64748b', mr: 1 }} /> }}
+              />
+            </Box>
+
+            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
+
+            {/* ── Professional Background ── */}
+            <SectionTitle>Professional Background</SectionTitle>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mb: 4 }}>
+
+              <TextField label="Target Role" placeholder="e.g. Senior Frontend Engineer"
+                value={form.jobRole} onChange={handleChange('jobRole')}
+                error={!!errors.jobRole} helperText={errors.jobRole} fullWidth size="small" sx={inputSx} />
+
+              {/* Experience */}
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  label="Years of Experience" placeholder="e.g. 4"
+                  value={form.experience} onChange={handleExperienceChange}
+                  type="number"
+                  inputProps={{ min: 0, max: 50, style: { paddingRight: form.experience !== '' ? '85px' : '12px' } }}
+                  fullWidth size="small" error={!!errors.experience}
+                  helperText={errors.experience || '0–2 → Junior · 3–5 → Mid · 6–10 → Senior · 10+ → Lead'}
+                  sx={{
+                    ...inputSx,
+                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': { display: 'none' },
+                    '& input[type=number]': { MozAppearance: 'textfield' },
+                  }}
+                />
+                {form.experience !== '' && (() => {
+                  const level = getExperienceLevel(form.experience);
+                  return level ? (
+                    <Box sx={{
+                      position: 'absolute', right: 14, top: '27px', transform: 'translateY(-90%)',
+                      px: 1.25, py: 0.25, borderRadius: '999px',
+                      bgcolor: level.bg, color: level.color,
+                      fontSize: '0.7rem', fontWeight: 700, pointerEvents: 'none',
+                    }}>
+                      {level.label}
+                    </Box>
+                  ) : null;
+                })()}
+              </Box>
+
+              {/* Skills */}
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <Typography sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', mb: 0.75 }}>
+                  Skills & Tech Stack
+                </Typography>
+                <Box sx={{
+                  minHeight: 48, px: 1.5, py: 1, borderRadius: '8px', border: '1px solid #cbd5e1',
+                  display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center',
+                  '&:focus-within': { borderColor: PRIMARY, boxShadow: `0 0 0 2px ${PRIMARY}30` },
+                }}>
+                  {skills.map((skill, i) => {
+                    const col = skillColors[i % skillColors.length];
+                    return (
+                      <Chip key={skill} label={skill} onDelete={() => removeSkill(skill)}
+                        deleteIcon={<Close sx={{ fontSize: '13px !important' }} />} size="small"
+                        sx={{
+                          bgcolor: col.bg, color: col.color, fontWeight: 700,
+                          fontSize: '0.75rem', borderRadius: '999px',
+                          '& .MuiChip-deleteIcon': { color: col.color, opacity: 0.7, '&:hover': { opacity: 1 } },
+                        }} />
+                    );
+                  })}
+                  <Box component="input" value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addSkill(); } }}
+                    placeholder={skills.length === 0 ? 'Add skill...' : ''}
+                    sx={{
+                      flex: 1, minWidth: 80, border: 'none', outline: 'none',
+                      fontSize: '0.875rem', bgcolor: 'transparent', color: '#374151',
+                      '&::placeholder': { color: '#94a3b8' },
+                    }} />
+                  {skillInput && (
+                    <IconButton size="small" onClick={addSkill} sx={{ color: PRIMARY, p: 0.25 }}>
+                      <Add sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Box>
+                <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', mt: 0.5 }}>
+                  Press Enter or comma to add a skill
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ borderColor: '#f1f5f9', mb: 4 }} />
+
+            {/* ── Work Experience ── */}
+            {experiences.length > 0 && (
+              <Box sx={{ mb: 4 }}>
+                <SectionTitle>Work Experience</SectionTitle>
+                {experiences.map((exp, idx) => (
+                  <Accordion key={idx} defaultExpanded={idx === 0} sx={{ mb: 1.5, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
+                        <Box>
+                          <Typography sx={{ fontWeight: 600, color: PRIMARY }}>{exp.role || exp.title || 'Position'}</Typography>
+                          <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>{exp.company} {exp.duration && `• ${exp.duration}`}</Typography>
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ backgroundColor: '#ffffff' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Box>
+                          <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>Description</Typography>
+                          <Typography sx={{ fontSize: '0.875rem', color: '#64748b', whiteSpace: 'pre-wrap' }}>{exp.description}</Typography>
+                        </Box>
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            )}
+
+            {/* ── Projects ── */}
+            {projects.length > 0 && (
+              <Box sx={{ mb: 4 }}>
+                <SectionTitle>Projects</SectionTitle>
+                {projects.map((proj, idx) => (
+                  <Accordion key={idx} sx={{ mb: 1.5, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
+                        <Box>
+                          <Typography sx={{ fontWeight: 600, color: PRIMARY }}>{proj.name || proj.title || 'Project'}</Typography>
+                          {proj.date && <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>{proj.date}</Typography>}
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ backgroundColor: '#ffffff' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Box>
+                          <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 0.5 }}>Description</Typography>
+                          <Typography sx={{ fontSize: '0.875rem', color: '#64748b', whiteSpace: 'pre-wrap' }}>{proj.description}</Typography>
+                        </Box>
+                        {proj.skills_used && (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                            {(Array.isArray(proj.skills_used) ? proj.skills_used : []).map((skill, i) => (
+                              <Chip key={i} label={skill} size="small" sx={{ bgcolor: '#f5f3ff', color: '#7c3aed', fontWeight: 600, fontSize: '0.75rem', borderRadius: '999px' }} />
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
               </Box>
             )}
 
