@@ -104,7 +104,9 @@ const AdvancedFilterPage = () => {
       // Old code sent minExp/maxExp which the backend never read → no filter.
       if (selectedLevel) params.append('experienceLevel', selectedLevel);
 
-      if (selectedSkills.length) params.append('skills', selectedSkills.join(','));
+      if (selectedSkills.length) {
+        selectedSkills.forEach(skill => params.append('skills', skill));
+      }
       params.append('page', page);
       params.append('limit', LIMIT);
 
@@ -157,7 +159,7 @@ const AdvancedFilterPage = () => {
   const removeFilter = (key) => {
     if (key === 'status') setSelectedStatuses([]);
     if (key === 'level')  setSelectedLevel(null);
-    if (key === 'skills') setSelectedSkills([]);
+    if (key === 'skills') { setSelectedSkills([]); }
     if (key === 'search') setSearch('');
     setPage(1);
   };
@@ -300,9 +302,11 @@ const AdvancedFilterPage = () => {
 
           {/* Skills */}
           <Box sx={{ position: 'relative' }}>
-            <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 2 }}>
-              Skills
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Skills Filter
+              </Typography>
+            </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
               {selectedSkills.map(skill => (
                 <Chip key={skill} label={skill} size="small"
@@ -479,9 +483,15 @@ const AdvancedFilterPage = () => {
                               {initials}
                             </Avatar>
                             <Box>
-                              <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
-                                {c.firstName} {c.lastName}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
+                                  {c.firstName} {c.lastName}
+                                </Typography>
+                                {c.matchScore > 0 && selectedSkills.length > 0 && (
+                                  <Chip label={`${Math.round((c.matchScore / selectedSkills.length) * 100)}% Match`} size="small" 
+                                    sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }} />
+                                )}
+                              </Box>
                               <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>{c.email}</Typography>
                             </Box>
                           </Box>

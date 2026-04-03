@@ -106,7 +106,7 @@ export const addCandidate = async (req, res, next) => {
 
 export const getAllCandidates = async (req, res, next) => {
     try {
-        const { search, status, jobRole, sortby, skills, experienceLevel, page = 1, limit = 10 } = req.query;
+        const { search, status, jobRole, sortby, skills, matchType, experienceLevel, page = 1, limit = 10 } = req.query;
         
         let query = {};
         const andConditions = [];
@@ -132,21 +132,19 @@ export const getAllCandidates = async (req, res, next) => {
             if (range) andConditions.push({ experience: { $gte: range.min, $lte: range.max } });
         }
         
-        // ✅ UPDATED: Skills filter - Search from BOTH manual AND parsed sources
-        // Properly combined with other filters using $and and $or
+        // ✅ UPDATED: Skills filter with simple Partial match support ($in) + Case Insensitivity
         if (skills) {
-            const skillsArray = skills.split(',').map(s => s.trim().toLowerCase());
+            const skillsList = Array.isArray(skills) ? skills : [skills];
+            const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const skillsRegexArray = skillsList.map(s => new RegExp(`^${escapeRegex(s.trim())}$`, 'i'));
             
-            // Search skills in both sources (manual and parsed)
-            const skillsOrCondition = {
+            andConditions.push({
                 $or: [
-                    { 'skillsSources.manual': { $in: skillsArray } },
-                    { 'skillsSources.parsed': { $in: skillsArray } },
-                    // Fallback: also search in the combined skills array (for backward compatibility)
-                    { skills: { $in: skillsArray } }
+                    { 'skillsSources.manual': { $in: skillsRegexArray } },
+                    { 'skillsSources.parsed': { $in: skillsRegexArray } },
+                    { skills: { $in: skillsRegexArray } }
                 ]
-            };
-            andConditions.push(skillsOrCondition);
+            });
         }
 
         // Merge all conditions with $and if we have multiple filters
@@ -161,23 +159,48 @@ export const getAllCandidates = async (req, res, next) => {
         if (search) sortOption = { score: { $meta: 'textScore' }, ...sortOption };
         
         const skip  = (Number(page) - 1) * Number(limit);
-        
-        // OPTIMIZED: Use countDocuments with hint to use index
-        const total = await Candidate.countDocuments(query);
 
-        const candidates = await Candidate.find(query, search ? { score: { $meta: 'textScore' } } : {})
-        .sort(sortOption)
-        .skip(skip)
-            .limit(Number(limit))
-            .populate('addedBy', 'firstName lastName email')
-            .lean(); // OPTIMIZED: lean() for faster queries
+        // ── Aggregation Pipeline ──
+        const pipeline = [{ $match: query }];
+
+        // Calculate matchScore if skills are provided
+        if (skills) {
+            const skillsList = Array.isArray(skills) ? skills : [skills];
+            const skillsArray = skillsList.map(s => s.trim().toLowerCase());
+            pipeline.push({
+                $addFields: {
+                    matchScore: {
+                        $size: {
+                            $setIntersection: [
+                                { $map: { input: "$skills", as: "s", in: { $toLower: "$$s" } } },
+                                skillsArray
+                            ]
+                        }
+                    }
+                }
+            });
+            // Update sortOption to prioritize matchScore
+            sortOption = { matchScore: -1, ...sortOption };
+        }
+
+        pipeline.push({ $sort: sortOption });
+        pipeline.push({ $skip: skip });
+        pipeline.push({ $limit: Number(limit) });
+        pipeline.push({ $lookup: { from: 'users', localField: 'addedBy', foreignField: '_id', as: 'addedBy' } });
+        pipeline.push({ $unwind: { path: '$addedBy', preserveNullAndEmptyArrays: true } });
+        pipeline.push({ $project: { 'addedBy.password': 0, 'addedBy.tokens': 0 } });
+
+        const [results, totalCount] = await Promise.all([
+            Candidate.aggregate(pipeline),
+            Candidate.countDocuments(query)
+        ]);
 
         res.status(200).json({
             success: true,
-            count: total,
-            candidates,
+            count: totalCount,
+            candidates: results,
             page: Number(page),
-            totalPages: Math.ceil(total / Number(limit)),
+            totalPages: Math.ceil(totalCount / Number(limit)),
         });
 
     } catch (error) {
