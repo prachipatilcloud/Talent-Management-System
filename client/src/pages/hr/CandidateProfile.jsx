@@ -5,6 +5,7 @@ import {
     Box, Typography, Button, Avatar, IconButton,
     CircularProgress, Divider, Paper,
     Dialog, DialogContent, DialogTitle, MenuItem, TextField,
+    LinearProgress, Stack
 } from '@mui/material';
 import {
     ArrowBack, Email, Phone,
@@ -14,12 +15,18 @@ import {
     OpenInNew, InsertDriveFile, CalendarMonth,
     Edit, Videocam, Business, Close,
     GitHub, LinkedIn, Language,
+    MoreHoriz, Lock,
+    Description, Archive as ArchiveIcon,
+    ChevronRight, PlayArrow
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
+// ── Constants & Config ───────────────────────────────────────────
 const PRIMARY = '#3b4eba';
-const GREEN = '#16a34a';
-const RED = '#dc2626';
+const SECONDARY = '#2f3faa';
+const SUCCESS = '#059669';
+const DANGER = '#dc2626';
+const NEUTRAL = '#64748b';
 
 const TIME_SLOTS = [
     '9:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:00 AM - 12:00 PM',
@@ -38,15 +45,16 @@ const statusConfig = {
 };
 
 const roundStatusConfig = {
-    pending: { bg: '#fefce8', color: '#a16207', border: '#fef08a', label: 'PENDING' },
+    pending: { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', label: 'PENDING' },
     passed: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'PASSED' },
     rejected: { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: 'REJECTED' },
 };
 
 const recommendationConfig = {
-    'Hire': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
-    'No Hire': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3' },
-    'Maybe': { bg: '#fefce8', color: '#a16207', border: '#fef08a' },
+    'Hire': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'HIRE' },
+    'No Hire': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: 'NO HIRE' },
+    'Maybe': { bg: '#fefce8', color: '#a16207', border: '#fef08a', label: 'MAYBE' },
+    'Hire - Strong': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'HIRE - STRONG' },
 };
 
 const getAvatarColor = (name) => {
@@ -72,21 +80,46 @@ const StarRating = ({ value = 0 }) => (
     </Box>
 );
 
-const StepIcon = ({ status }) => {
-    if (status === 'passed') return <CheckCircle sx={{ fontSize: 26, color: GREEN, flexShrink: 0 }} />;
-    if (status === 'rejected') return <Cancel sx={{ fontSize: 26, color: RED, flexShrink: 0 }} />;
-    return (
+// ── Components ───────────────────────────────────────────────────
+
+const StatusBadge = ({ label, config }) => (
+    <Box sx={{
+        px: 1.25, py: 0.4, borderRadius: '6px',
+        bgcolor: config?.bg || '#f1f5f9',
+        color: config?.color || '#475569',
+        border: `1px solid ${config?.border || '#e2e8f0'}`,
+        fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.04em',
+        textTransform: 'uppercase'
+    }}>
+        {label}
+    </Box>
+);
+
+const SectionHeader = ({ icon, title, badge }) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
         <Box sx={{
-            width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-            bgcolor: '#f1f5f9', border: `2px solid #cbd5e1`,
+            width: 32, height: 32, borderRadius: '8px',
+            bgcolor: 'rgba(59,78,186,0.1)', color: PRIMARY,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#cbd5e1' }} />
+            {icon}
         </Box>
-    );
-};
+        <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {title}
+        </Typography>
+        {badge && (
+            <Box sx={{
+                ml: 'auto', px: 1, py: 0.2, borderRadius: '4px',
+                bgcolor: '#f1f5f9', color: '#64748b', fontSize: '0.625rem', fontWeight: 700
+            }}>
+                {badge}
+            </Box>
+        )}
+    </Box>
+);
 
 // ════════════════════════════════════════════════════════════════════
+
 const CandidateProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -114,7 +147,6 @@ const CandidateProfile = () => {
 
     const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/hr';
 
-    // ── Fetch candidate ──────────────────────────────────────────────
     useEffect(() => {
         const fetchCandidate = async () => {
             try {
@@ -129,14 +161,12 @@ const CandidateProfile = () => {
         fetchCandidate();
     }, [id]);
 
-    // ── Fetch interviewers for reschedule modal ──────────────────────
     useEffect(() => {
         API.get('/users?role=interviewer&limit=100')
             .then(res => setInterviewerOptions(res.data.data || []))
             .catch(() => setInterviewerOptions([]));
     }, []);
 
-    // ── Fetch resume as blob ─────────────────────────────────────────
     useEffect(() => {
         if (!candidate?.resume?.driveFileId) return;
         const fetchResume = async () => {
@@ -167,56 +197,11 @@ const CandidateProfile = () => {
         a.click();
     };
 
-    const handleScheduleInterview = () => {
-        const lastRound = rounds[rounds.length - 1];
+    const handleScheduleNextRound = () => {
+        const lastRound = candidate?.interviewRounds?.[candidate.interviewRounds.length - 1];
         navigate(`${basePath}/candidates/${id}/schedule-interview`, {
             state: { candidate, lastRoundName: lastRound?.roundName || null },
         });
-    };
-
-    // ── Open reschedule modal ────────────────────────────────────────
-    const openReschedule = (round) => {
-        setRescheduleModal({ open: true, round });
-        setRescheduleForm({
-            date: round.scheduledDate ? new Date(round.scheduledDate).toISOString().split('T')[0] : '',
-            timeSlot: '10:00 AM - 11:00 AM',
-            mode: round.interviewMode || 'In-office',
-            meetingLink: round.interviewLink || '',
-            officeLocation: round.officeLocation || '',
-        });
-        setRescheduleInterviewers(
-            Array.isArray(round.interviewers)
-                ? round.interviewers.filter(i => typeof i === 'object')
-                : []
-        );
-        setRescheduleError('');
-        setRescheduleInterviewerInput('');
-    };
-
-    // ── Submit reschedule ────────────────────────────────────────────
-    const handleReschedule = async () => {
-        if (!rescheduleForm.date) { setRescheduleError('Please select a date'); return; }
-        if (rescheduleInterviewers.length === 0) { setRescheduleError('Add at least one interviewer'); return; }
-        setRescheduleLoading(true);
-        setRescheduleError('');
-        try {
-            const res = await API.patch(
-                `/candidates/${candidate._id}/rounds/${rescheduleModal.round._id}/reschedule`,
-                {
-                    scheduledDate: `${rescheduleForm.date} ${rescheduleForm.timeSlot.split(' - ')[0]}`,
-                    interviewMode: rescheduleForm.mode,
-                    interviewLink: rescheduleForm.mode === 'Remote' ? rescheduleForm.meetingLink : undefined,
-                    officeLocation: rescheduleForm.mode === 'In-office' ? rescheduleForm.officeLocation : undefined,
-                    interviewers: rescheduleInterviewers.map(i => i._id),
-                }
-            );
-            setCandidate(res.data.candidate);
-            setRescheduleModal({ open: false, round: null });
-        } catch (err) {
-            setRescheduleError(err.response?.data?.message || 'Failed to reschedule.');
-        } finally {
-            setRescheduleLoading(false);
-        }
     };
 
     const handleReject = async () => {
@@ -230,1053 +215,427 @@ const CandidateProfile = () => {
         } finally {
             setRejectLoading(false);
         }
-    }
+    };
 
-    // ── Loading / error states ───────────────────────────────────────
+    const openReschedule = (round) => {
+        setRescheduleModal({ open: true, round });
+        setRescheduleForm({
+            date: round.scheduledDate ? new Date(round.scheduledDate).toISOString().split('T')[0] : '',
+            timeSlot: '10:00 AM - 11:00 AM',
+            mode: round.interviewMode || 'In-office',
+            meetingLink: round.interviewLink || '',
+            officeLocation: round.officeLocation || '',
+        });
+        setRescheduleInterviewers(Array.isArray(round.interviewers) ? round.interviewers.filter(i => typeof i === 'object') : []);
+        setRescheduleError('');
+    };
+
+    const handleReschedule = async () => {
+        if (!rescheduleForm.date) { setRescheduleError('Please select a date'); return; }
+        setRescheduleLoading(true);
+        try {
+            const res = await API.patch(`/candidates/${candidate._id}/rounds/${rescheduleModal.round._id}/reschedule`, {
+                scheduledDate: `${rescheduleForm.date} ${rescheduleForm.timeSlot.split(' - ')[0]}`,
+                interviewMode: rescheduleForm.mode,
+                interviewLink: rescheduleForm.mode === 'Remote' ? rescheduleForm.meetingLink : undefined,
+                officeLocation: rescheduleForm.mode === 'In-office' ? rescheduleForm.officeLocation : undefined,
+                interviewers: rescheduleInterviewers.map(i => i._id),
+            });
+            setCandidate(res.data.candidate);
+            setRescheduleModal({ open: false, round: null });
+        } catch (err) {
+            setRescheduleError(err.response?.data?.message || 'Failed to reschedule.');
+        } finally {
+            setRescheduleLoading(false);
+        }
+    };
+
     if (loading) return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f8fafc' }}>
             <CircularProgress sx={{ color: PRIMARY }} />
         </Box>
     );
 
     if (error || !candidate) return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 }}>
-            <Typography sx={{ color: '#ef4444', fontWeight: 600 }}>{error || 'Candidate not found'}</Typography>
-            <Button onClick={() => navigate(`${basePath}/candidates`)} startIcon={<ArrowBack />}
-                sx={{ textTransform: 'none', color: PRIMARY }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 2, bgcolor: '#f8fafc' }}>
+            <Typography sx={{ color: DANGER, fontWeight: 700 }}>{error || 'Candidate not found'}</Typography>
+            <Button onClick={() => navigate(`${basePath}/candidates`)} startIcon={<ArrowBack />} sx={{ textTransform: 'none', color: PRIMARY }}>
                 Back to Candidates
             </Button>
         </Box>
     );
 
-    const sc = statusConfig[candidate.status] || statusConfig.Applied;
     const initials = `${candidate.firstName?.[0] || ''}${candidate.lastName?.[0] || ''}`.toUpperCase();
-    const avatarColor = getAvatarColor(candidate.firstName);
+    const avatarBg = getAvatarColor(candidate.firstName);
     const appId = `#${String(candidate._id).slice(-5).toUpperCase()}`;
-    const resume = candidate.resume;
-    const hasResume = !!(resume?.driveFileId);
     const rounds = candidate.interviewRounds || [];
-
+    const hasResume = !!candidate.resume?.driveFileId;
 
     return (
-        <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#f6f6f8' }}>
+        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc', overflow: 'hidden' }}>
 
-            {/* ── Sticky Top Bar ── */}
+            {/* ── TOP BAR ── */}
             <Box sx={{
-                height: 56, bgcolor: 'white', borderBottom: '1px solid #e2e8f0',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                px: 3, position: 'sticky', top: 0, zIndex: 10,
+                height: 64, bgcolor: 'white', borderBottom: '1px solid #e2e8f0',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, zIndex: 10,
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <IconButton size="small" onClick={() => navigate(`${basePath}/candidates`)}
-                        sx={{ color: '#64748b', '&:hover': { color: PRIMARY } }}>
+                    <IconButton size="small" onClick={() => navigate(`${basePath}/candidates`)} sx={{ color: NEUTRAL }}>
                         <ArrowBack fontSize="small" />
                     </IconButton>
-                    <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem' }}>
-                        Candidate Profile
-                    </Typography>
+                    <Typography sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1rem' }}>Candidate Profile</Typography>
                     <Box sx={{
-                        px: 1.5, py: 0.3, borderRadius: '6px',
-                        bgcolor: 'rgba(59,78,186,0.08)', border: '1px solid rgba(59,78,186,0.2)',
-                        fontSize: '0.75rem', fontWeight: 600, color: PRIMARY,
+                        px: 1.5, py: 0.4, borderRadius: '6px', bgcolor: 'rgba(59,78,186,0.08)',
+                        border: '1px solid rgba(59,78,186,0.15)', fontSize: '0.7rem', fontWeight: 700, color: PRIMARY
                     }}>
                         Application ID: {appId}
                     </Box>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                    <Button variant="outlined" startIcon={<ArchiveIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                            textTransform: 'none', fontWeight: 700, borderColor: '#e2e8f0', color: '#475569',
+                            px: 2.5, borderRadius: '8px', '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
+                        }}>
+                        Archive
+                    </Button>
                     <Button
+                        variant="contained"
                         onClick={handleReject}
                         disabled={rejectLoading || candidate.status === 'Rejected'}
-                        startIcon={rejectLoading ?
-                            <CircularProgress size={14} sx={{ color: 'white' }} />
-                            : <Cancel sx={{ fontSize: '1rem !important' }} />}
                         sx={{
-                            textTransform: 'none', fontWeight: 700, fontSize: '0.875rem',
-                            color: 'white', borderRadius: '8px', bgcolor: RED, px: 2, py: 0.75,
-                            boxShadow: '0 2px 8px rgba(220,38,38,0.25)',
-                            '&:hover': { bgcolor: '#b91c1c' },
+                            textTransform: 'none', fontWeight: 700, bgcolor: DANGER, px: 2.5, borderRadius: '8px',
+                            boxShadow: 'none', '&:hover': { bgcolor: '#b91c1c', boxShadow: 'none' }
                         }}>
-                        Reject
+                        {rejectLoading ? <CircularProgress size={20} color="inherit" /> : 'Reject'}
                     </Button>
-
                     <Button
-                        startIcon={<CalendarMonth sx={{ fontSize: '1rem !important' }} />}
-                        onClick={handleScheduleInterview}
+                        variant="contained"
+                        onClick={handleScheduleNextRound}
+                        endIcon={<ChevronRight />}
                         sx={{
-                            textTransform: 'none', fontWeight: 700, fontSize: '0.875rem',
-                            color: 'white', borderRadius: '8px',
-                            bgcolor: '#2f3faa', px: 2, py: 0.75,
-                            boxShadow: '0 2px 8px rgba(5,150,105,0.25)',
-                            '&:hover': { bgcolor: '#047857' },
+                            textTransform: 'none', fontWeight: 700, bgcolor: PRIMARY, px: 2.5, borderRadius: '8px',
+                            boxShadow: 'none', '&:hover': { bgcolor: SECONDARY, boxShadow: 'none' }
                         }}>
-                        Schedule Interview
+                        Move to Next Stage
                     </Button>
                 </Box>
             </Box>
 
-            {/* ── Two Column Body ── */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 3, p: 3, maxWidth: 1280, mx: 'auto' }}>
+            {/* ── BODY ── */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 400px) 1fr', gap: 3, maxWidth: 1440, mx: 'auto' }}>
 
-                {/* ═══════ LEFT PANEL ═══════ */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                    {/* ═══════ LEFT COLUMN (INFO) ═══════ */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-                    {/* Profile Card */}
-                    <Paper elevation={0} sx={{
-                        borderRadius: '12px', border: '1px solid #e2e8f0',
-                        bgcolor: 'white', overflow: 'hidden',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    }}>
-                        <Box sx={{ height: 5, bgcolor: PRIMARY }} />
-                        <Box sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', gap: 2, mb: 2.5 }}>
+                        {/* Profile Info Card */}
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #e2e8f0', bgcolor: 'white' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 2.5 }}>
                                 <Avatar sx={{
-                                    width: 64, height: 64, borderRadius: '12px',
-                                    bgcolor: `${avatarColor}20`, color: avatarColor,
-                                    fontSize: '1.25rem', fontWeight: 800,
-                                    border: '2px solid #e2e8f0', flexShrink: 0,
+                                    width: 80, height: 80, borderRadius: '16px', bgcolor: `${avatarBg}15`,
+                                    color: avatarBg, fontSize: '2rem', fontWeight: 900, border: `1px solid ${avatarBg}30`
                                 }}>
                                     {initials}
                                 </Avatar>
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 0.25 }}>
-                                        <Typography sx={{ fontSize: '1.0625rem', fontWeight: 800, color: '#0f172a' }}>
-                                            {candidate.firstName} {candidate.lastName}
-                                        </Typography>
-                                        <Box sx={{
-                                            px: 1.25, py: 0.2, borderRadius: '6px',
-                                            bgcolor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                                            fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.06em',
-                                        }}>
-                                            ACTIVE
-                                        </Box>
-                                    </Box>
-                                    <Typography sx={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
+                                <Box>
+                                    <Typography sx={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.2 }}>
+                                        {candidate.firstName} {candidate.lastName}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.8125rem', color: PRIMARY, fontWeight: 700, mt: 0.5, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                                         {candidate.jobRole}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
-                                        <Box component="span" sx={{
-                                            px: 1.25, py: 0.3, borderRadius: '999px',
-                                            bgcolor: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                                            fontSize: '0.6875rem', fontWeight: 700,
-                                        }}>
-                                            {candidate.status}
-                                        </Box>
-                                        {candidate.experience != null && (
-                                            <Box component="span" sx={{
-                                                px: 1.25, py: 0.3, borderRadius: '999px',
-                                                bgcolor: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0',
-                                                fontSize: '0.6875rem', fontWeight: 600,
-                                            }}>
-                                                {candidate.experience} yr{candidate.experience !== 1 ? 's' : ''} exp
-                                            </Box>
+                                    <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                                        {candidate.linkedin && (
+                                            <IconButton size="small" component="a" href={candidate.linkedin} target="_blank" sx={{ p: 0.5, color: '#0077b5', '&:hover': { bgcolor: '#0077b510' } }}>
+                                                <LinkedIn sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                        )}
+                                        {candidate.github && (
+                                            <IconButton size="small" component="a" href={candidate.github} target="_blank" sx={{ p: 0.5, color: '#181717', '&:hover': { bgcolor: '#18171710' } }}>
+                                                <GitHub sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                        )}
+                                        {candidate.portfolio && (
+                                            <IconButton size="small" component="a" href={candidate.portfolio} target="_blank" sx={{ p: 0.5, color: PRIMARY, '&:hover': { bgcolor: `${PRIMARY}10` } }}>
+                                                <Language sx={{ fontSize: 18 }} />
+                                            </IconButton>
                                         )}
                                     </Box>
                                 </Box>
                             </Box>
 
-                            <Divider sx={{ borderColor: '#f1f5f9', mb: 2 }} />
+                            <Stack spacing={1.5} sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Email sx={{ fontSize: 16, color: '#64748b' }} />
+                                    <Typography sx={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>{candidate.email}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Phone sx={{ fontSize: 16, color: '#64748b' }} />
+                                    <Typography sx={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>{candidate.phone || '+1 (555) 000-0000'}</Typography>
+                                </Box>
+                            </Stack>
+                        </Paper>
 
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, mb: 2 }}>
-                                {[
-                                    { icon: <Email sx={{ fontSize: 15 }} />, value: candidate.email },
-                                    { icon: <Phone sx={{ fontSize: 15 }} />, value: candidate.phone || 'Not provided' },
-                                ].map((row, i) => (
-                                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                        <Box sx={{ color: '#94a3b8', display: 'flex' }}>{row.icon}</Box>
-                                        <Typography sx={{ fontSize: '0.8125rem', color: '#475569' }}>{row.value}</Typography>
+                        {/* Professional Background */}
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <SectionHeader icon={<Business fontSize="small" />} title="Professional Background" />
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                {(candidate.parsedResumeData?.aiExtractedExperience || []).map((exp, idx, arr) => (
+                                    <Box key={idx} sx={{ display: 'flex', gap: 2 }}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: PRIMARY, mt: 1 }} />
+                                            {idx !== arr.length - 1 && <Box sx={{ flex: 1, width: 2, bgcolor: '#e2e8f0', my: 0.5 }} />}
+                                        </Box>
+                                        <Box sx={{ pb: idx !== arr.length - 1 ? 3 : 0 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a' }}>{exp.role}</Typography>
+                                                <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8' }}>{exp.duration}</Typography>
+                                            </Box>
+                                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: PRIMARY, mb: 1 }}>{exp.company}</Typography>
+                                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.6 }}>{exp.description}</Typography>
+                                        </Box>
                                     </Box>
                                 ))}
                             </Box>
+                        </Paper>
 
-                            {candidate.skills?.length > 0 && (
-                                <>
-                                    <Divider sx={{ borderColor: '#f1f5f9', mb: 2 }} />
-                                    <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
-                                        Skills
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                                        {candidate.skills.map(skill => (
-                                            <Box key={skill} component="span" sx={{
-                                                px: 1.25, py: 0.4, borderRadius: '6px',
-                                                bgcolor: 'rgba(59,78,186,0.08)', color: PRIMARY,
-                                                fontSize: '0.75rem', fontWeight: 700,
-                                            }}>
-                                                {skill}
-                                            </Box>
-                                        ))}
+                        {/* Key Projects */}
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <SectionHeader icon={<PlayArrow fontSize="small" />} title="Key Projects" />
+                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                {(candidate.parsedResumeData?.aiExtractedProjects || []).map((proj, idx) => (
+                                    <Box key={idx} sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                        <Typography sx={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0f172a', mb: 0.5 }}>{proj.name}</Typography>
+                                        <Typography sx={{ fontSize: '0.7rem', color: '#64748b', mb: 1.5, height: 32, overflow: 'hidden' }}>{proj.description}</Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {(proj.tags || proj.skills_used || []).map(tag => (
+                                                <Box key={tag} sx={{ px: 1, py: 0.2, borderRadius: '4px', bgcolor: 'white', border: '1px solid #e2e8f0', fontSize: '0.6rem', fontWeight: 600, color: '#475569' }}>
+                                                    {tag}
+                                                </Box>
+                                            ))}
+                                        </Box>
                                     </Box>
-                                </>
-                            )}
+                                ))}
+                            </Box>
+                        </Paper>
 
-                            {/* Social & Portfolio Links */}
-                            {(candidate.github || candidate.linkedin || candidate.portfolio) && (
-                                <>
-                                    <Divider sx={{ borderColor: '#f1f5f9', my: 2 }} />
-                                    <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
-                                        Social & Portfolio
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        {candidate.github && (
-                                            <Box
-                                                component="a" href={candidate.github} target="_blank" rel="noopener noreferrer"
-                                                sx={{
-                                                    display: 'flex', alignItems: 'center', gap: 1.25,
-                                                    textDecoration: 'none', color: '#475569',
-                                                    px: 1.5, py: 1, borderRadius: '8px',
-                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                                                    transition: 'all 0.15s',
-                                                    '&:hover': { bgcolor: '#f1f5f9', borderColor: '#cbd5e1', color: '#24292e' },
-                                                }}
-                                            >
-                                                <GitHub sx={{ fontSize: 16, color: '#24292e' }} />
-                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {candidate.github.replace(/^https?:\/\/(www\.)?/, '')}
-                                                </Typography>
-                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
-                                            </Box>
-                                        )}
-                                        {candidate.linkedin && (
-                                            <Box
-                                                component="a" href={candidate.linkedin} target="_blank" rel="noopener noreferrer"
-                                                sx={{
-                                                    display: 'flex', alignItems: 'center', gap: 1.25,
-                                                    textDecoration: 'none', color: '#475569',
-                                                    px: 1.5, py: 1, borderRadius: '8px',
-                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                                                    transition: 'all 0.15s',
-                                                    '&:hover': { bgcolor: '#eff6ff', borderColor: '#bfdbfe', color: '#0077B5' },
-                                                }}
-                                            >
-                                                <LinkedIn sx={{ fontSize: 16, color: '#0077B5' }} />
-                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {candidate.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
-                                                </Typography>
-                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
-                                            </Box>
-                                        )}
-                                        {candidate.portfolio && (
-                                            <Box
-                                                component="a" href={candidate.portfolio} target="_blank" rel="noopener noreferrer"
-                                                sx={{
-                                                    display: 'flex', alignItems: 'center', gap: 1.25,
-                                                    textDecoration: 'none', color: '#475569',
-                                                    px: 1.5, py: 1, borderRadius: '8px',
-                                                    bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                                                    transition: 'all 0.15s',
-                                                    '&:hover': { bgcolor: '#f5f3ff', borderColor: '#ddd6fe', color: '#7c3aed' },
-                                                }}
-                                            >
-                                                <Language sx={{ fontSize: 16, color: '#7c3aed' }} />
-                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {candidate.portfolio.replace(/^https?:\/\/(www\.)?/, '')}
-                                                </Typography>
-                                                <OpenInNew sx={{ fontSize: 13, color: '#94a3b8', flexShrink: 0 }} />
-                                            </Box>
-                                        )}
+                        {/* Resume Preview */}
+                        <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                            <Box sx={{ px: 2.5, py: 2, bgcolor: '#fafafa', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 32, height: 32, borderRadius: '6px', bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Description sx={{ fontSize: 18, color: DANGER }} />
                                     </Box>
-                                </>
-                            )}
-
-                            {candidate.addedBy && (
-                                <>
-                                    <Divider sx={{ borderColor: '#f1f5f9', my: 2 }} />
-                                    <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.75 }}>
-                                        Added By
+                                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0f172a' }}>
+                                        {hasResume ? candidate.resume.fileName : 'No Resume uploaded'}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.8125rem', color: '#475569' }}>
-                                        {candidate.addedBy.firstName} {candidate.addedBy.lastName}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                        {candidate.addedBy.email}
-                                    </Typography>
-                                </>
-                            )}
-                        </Box>
-                    </Paper>
-
-                    {/* Resume Card */}
-                    <Paper elevation={0} sx={{
-                        borderRadius: '12px', border: '1px solid #e2e8f0',
-                        bgcolor: 'white', overflow: 'hidden',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    }}>
-                        <Box sx={{
-                            px: 2, py: 1.5,
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            borderBottom: '1px solid #f1f5f9', bgcolor: '#fafafa',
-                        }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                <Box sx={{
-                                    width: 30, height: 30, borderRadius: '6px',
-                                    bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0,
-                                }}>
-                                    <InsertDriveFile sx={{ fontSize: 16, color: '#dc2626' }} />
                                 </Box>
-                                <Box>
-                                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>
-                                        {hasResume ? resume.fileName : 'No resume uploaded'}
-                                    </Typography>
-                                    {hasResume && (
-                                        <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                                            Google Drive
-                                        </Typography>
-                                    )}
-                                </Box>
+                                {hasResume && (
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                        <IconButton size="small" onClick={() => setIframeZoom(z => Math.max(0.5, z - 0.1))}> <ZoomOut fontSize="inherit" /> </IconButton>
+                                        <IconButton size="small" onClick={() => setIframeZoom(z => Math.min(1.5, z + 0.1))}> <ZoomIn fontSize="inherit" /> </IconButton>
+                                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                                        <IconButton size="small" onClick={handleDownload} disabled={!resumeBlobUrl}> <Download fontSize="inherit" /> </IconButton>
+                                    </Box>
+                                )}
                             </Box>
-
-                            {hasResume && (
-                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                    <IconButton size="small" onClick={() => setIframeZoom(z => Math.min(z + 0.1, 1.5))}
-                                        sx={{ color: '#94a3b8', '&:hover': { color: PRIMARY } }}>
-                                        <ZoomIn sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={() => setIframeZoom(z => Math.max(z - 0.1, 0.5))}
-                                        sx={{ color: '#94a3b8', '&:hover': { color: PRIMARY } }}>
-                                        <ZoomOut sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                    <Box sx={{ width: 1, height: 16, bgcolor: '#e2e8f0', mx: 0.5 }} />
-                                    <IconButton size="small" onClick={() => window.open(resume.url, '_blank')}
-                                        sx={{ color: '#94a3b8', '&:hover': { color: PRIMARY } }}>
-                                        <OpenInNew sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={handleDownload} disabled={!resumeBlobUrl}
-                                        sx={{ color: '#94a3b8', '&:hover': { color: PRIMARY } }}>
-                                        <Download sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Box sx={{ bgcolor: '#f1f5f9', p: 1.5 }}>
-                            {!hasResume ? (
-                                <Box sx={{
-                                    height: 200, display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center', gap: 1,
-                                    bgcolor: 'white', borderRadius: '8px', border: '1px dashed #e2e8f0',
-                                }}>
-                                    <InsertDriveFile sx={{ fontSize: 32, color: '#cbd5e1' }} />
-                                    <Typography sx={{ fontSize: '0.8125rem', color: '#94a3b8', fontWeight: 500 }}>
-                                        No resume uploaded
-                                    </Typography>
-                                </Box>
-                            ) : resumeLoading ? (
-                                <Box sx={{
-                                    height: 420, display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center', gap: 2,
-                                    bgcolor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0',
-                                }}>
-                                    <CircularProgress size={28} sx={{ color: PRIMARY }} />
-                                    <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                        Loading resume...
-                                    </Typography>
-                                </Box>
-                            ) : resumeError ? (
-                                <Box sx={{
-                                    height: 200, display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center', gap: 2,
-                                    bgcolor: 'white', borderRadius: '8px', border: '1px dashed #e2e8f0',
-                                }}>
-                                    <Typography sx={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 600 }}>
-                                        Failed to load resume
-                                    </Typography>
-                                    <Button size="small" variant="outlined"
-                                        onClick={() => window.open(resume.url, '_blank')}
-                                        endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                                        sx={{
-                                            textTransform: 'none', fontSize: '0.8rem',
-                                            borderColor: PRIMARY, color: PRIMARY, borderRadius: '8px',
-                                        }}>
-                                        Open in Google Drive
-                                    </Button>
-                                </Box>
-                            ) : resumeBlobUrl ? (
-                                <Box sx={{
-                                    bgcolor: 'white', borderRadius: '8px',
-                                    border: '1px solid #e2e8f0', overflow: 'hidden',
-                                    height: 420, position: 'relative',
-                                }}>
-                                    <iframe
-                                        src={resumeBlobUrl}
-                                        title="Resume Preview"
-                                        style={{
-                                            width: `${(1 / iframeZoom) * 100}%`,
-                                            height: `${(1 / iframeZoom) * 100}%`,
-                                            border: 'none',
-                                            transform: `scale(${iframeZoom})`,
-                                            transformOrigin: 'top left',
-                                            display: 'block',
-                                        }}
-                                    />
-                                </Box>
-                            ) : null}
-                        </Box>
-                    </Paper>
-                </Box>
-
-                {/* ═══════ RIGHT PANEL ═══════ */}
-                <Paper elevation={0} sx={{
-                    borderRadius: '12px', border: '1px solid #e2e8f0',
-                    bgcolor: 'white', p: 3, alignSelf: 'start',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3.5 }}>
-                        <Box sx={{
-                            width: 32, height: 32, borderRadius: '8px',
-                            bgcolor: 'rgba(59,78,186,0.1)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            <Typography sx={{ fontSize: '1rem' }}>📋</Typography>
-                        </Box>
-                        <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
-                            Hiring Process Journey
-                        </Typography>
-                        {rounds.length > 0 && (
-                            <Box sx={{
-                                ml: 'auto', px: 1.5, py: 0.3, borderRadius: '999px',
-                                bgcolor: '#f1f5f9', border: '1px solid #e2e8f0',
-                                fontSize: '0.75rem', fontWeight: 600, color: '#64748b',
-                            }}>
-                                {rounds.length} Round{rounds.length !== 1 ? 's' : ''}
+                            <Box sx={{ height: 400, bgcolor: '#f1f5f9', p: 1.5 }}>
+                                {resumeLoading ? (
+                                    <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}> <CircularProgress size={24} /> </Box>
+                                ) : resumeBlobUrl ? (
+                                    <Box sx={{ height: '100%', bgcolor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', position: 'relative' }}>
+                                        <iframe src={resumeBlobUrl} title="Resume Preview" style={{
+                                            width: `${(1 / iframeZoom) * 100}%`, height: `${(1 / iframeZoom) * 100}%`,
+                                            border: 'none', transform: `scale(${iframeZoom})`, transformOrigin: 'top left', display: 'block'
+                                        }} />
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, bgcolor: 'white', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                                        <Description sx={{ fontSize: 32, color: '#cbd5e1' }} />
+                                        <Typography sx={{ fontSize: '0.8125rem', color: '#94a3b8' }}>Preview not available</Typography>
+                                    </Box>
+                                )}
                             </Box>
-                        )}
+                        </Paper>
                     </Box>
 
-                    {rounds.length === 0 ? (
-                        <Box sx={{
-                            py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                            bgcolor: '#f8fafc', borderRadius: '10px', border: '1px dashed #e2e8f0', gap: 2,
-                        }}>
-                            <Typography sx={{ fontSize: '2.5rem' }}>🗓️</Typography>
-                            <Box sx={{ textAlign: 'center' }}>
-                                <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem', mb: 0.5 }}>
-                                    No interview rounds scheduled yet
-                                </Typography>
-                                <Typography sx={{ color: '#94a3b8', fontSize: '0.8125rem' }}>
-                                    Schedule the first interview round to start the hiring process.
-                                </Typography>
-                            </Box>
-                            <Button
-                                variant="contained"
-                                startIcon={<CalendarMonth sx={{ fontSize: '1rem !important' }} />}
-                                onClick={handleScheduleInterview}
-                                sx={{
-                                    textTransform: 'none', fontWeight: 700, fontSize: '0.875rem',
-                                    bgcolor: PRIMARY, borderRadius: '8px', px: 3, py: 1,
-                                    boxShadow: '0 4px 14px rgba(59,78,186,0.25)',
-                                    '&:hover': { bgcolor: '#2f3faa', transform: 'translateY(-1px)' },
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                Schedule First Interview
-                            </Button>
-                        </Box>
-                    ) : (
-                        <Box>
-                            {rounds.map((round, idx) => {
-                                const isLast = idx === rounds.length - 1;
-                                const roundSt = roundStatusConfig[round.status] || roundStatusConfig.pending;
-                                const hasFeedback = round.feedback?.comments || round.feedback?.rating;
+                    {/* ═══════ RIGHT COLUMN (JOURNEY) ═══════ */}
+                    <Box>
+                        <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0', minHeight: '100%' }}>
+                            <SectionHeader icon={<CalendarMonth fontSize="small" />} title="Hiring Process Journey" />
 
-                                return (
-                                    <Box key={round._id || idx} sx={{ display: 'flex', gap: 2 }}>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 0.25 }}>
-                                            <StepIcon status={round.status} />
-                                            {!isLast && (
-                                                <Box sx={{
-                                                    width: 2, flex: 1, minHeight: 32,
-                                                    bgcolor: round.status === 'passed' ? `${GREEN}40` : '#e2e8f0',
-                                                    my: 0.5,
-                                                }} />
-                                            )}
-                                        </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                {(rounds.length > 0 ? rounds : []).map((round, idx, arr) => {
+                                    const isLast = idx === arr.length - 1;
+                                    const isPassed = round.status === 'passed';
+                                    const isRejected = round.status === 'rejected';
+                                    const isActive = round.status === 'pending' || (idx === 0 && rounds.every(r => r.status === 'pending'));
+                                    const hasFeedback = round.feedback?.rating || round.feedback?.comments;
 
-                                        <Box sx={{ flex: 1, pb: isLast ? 0 : 3 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                                                <Box>
-                                                    <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
-                                                        {round.roundName}
-                                                    </Typography>
-                                                    {round.interviewMode && (
-                                                        <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8', mt: 0.25 }}>
-                                                            {round.interviewMode}
-                                                            {round.interviewLink && (
-                                                                <Box component="a" href={round.interviewLink} target="_blank"
-                                                                    sx={{ color: PRIMARY, ml: 1, '&:hover': { textDecoration: 'underline' } }}>
-                                                                    Join Link ↗
-                                                                </Box>
-                                                            )}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    {round.scheduledDate && (
-                                                        <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                            {formatDate(round.scheduledDate)}
-                                                        </Typography>
-                                                    )}
-                                                    <Box sx={{
-                                                        px: 1.25, py: 0.25, borderRadius: '6px',
-                                                        bgcolor: roundSt.bg, color: roundSt.color, border: `1px solid ${roundSt.border}`,
-                                                        fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.04em',
-                                                    }}>
-                                                        {roundSt.label}
+                                    return (
+                                        <Box key={round._id || idx} sx={{ display: 'flex', gap: 3 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 0.5 }}>
+                                                {isPassed ? (
+                                                    <CheckCircle sx={{ fontSize: 24, color: SUCCESS }} />
+                                                ) : isRejected ? (
+                                                    <Cancel sx={{ fontSize: 24, color: DANGER }} />
+                                                ) : isActive ? (
+                                                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: '#3b4eba', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <MoreHoriz sx={{ fontSize: 16, color: 'white' }} />
                                                     </Box>
-                                                </Box>
+                                                ) : (
+                                                    <Lock sx={{ fontSize: 24, color: '#94a3b8' }} />
+                                                )}
+                                                {!isLast && <Box sx={{ flex: 1, width: 2, bgcolor: isPassed ? `${SUCCESS}40` : '#e2e8f0', my: 1 }} />}
                                             </Box>
 
-                                            {hasFeedback ? (
-                                                <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', p: 2.5, bgcolor: '#fafbff' }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                                            {round.feedback.rating && (
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <StarRating value={round.feedback.rating} />
-                                                                    <Typography sx={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
-                                                                        {round.feedback.rating}/5
-                                                                    </Typography>
-                                                                </Box>
-                                                            )}
-                                                            {round.feedback.submittedAt && (
-                                                                <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                                                                    Submitted {formatDateTime(round.feedback.submittedAt)}
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
-                                                        {round.feedback.recommendation && (() => {
-                                                            const rec = recommendationConfig[round.feedback.recommendation];
-                                                            return rec ? (
-                                                                <Box sx={{
-                                                                    px: 1.5, py: 0.4, borderRadius: '6px',
-                                                                    bgcolor: rec.bg, color: rec.color, border: `1px solid ${rec.border}`,
-                                                                    fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.04em',
-                                                                }}>
-                                                                    {round.feedback.recommendation.toUpperCase()}
-                                                                </Box>
-                                                            ) : null;
-                                                        })()}
+                                            <Box sx={{ flex: 1, pb: 5 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                                    <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: isPassed || isActive ? '#0f172a' : '#94a3b8' }}>
+                                                        {round.roundName}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        {round.scheduledDate && (
+                                                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
+                                                                {formatDate(round.scheduledDate).toUpperCase()}
+                                                            </Typography>
+                                                        )}
+                                                        {isActive && <StatusBadge label="IN PROGRESS" config={{ bg: 'rgba(59,78,186,0.1)', color: '#3b4eba', border: 'rgba(59,78,186,0.2)' }} />}
                                                     </Box>
-                                                    {round.feedback.comments && (
-                                                        <Typography sx={{
-                                                            fontSize: '0.8125rem', color: '#475569', fontStyle: 'italic',
-                                                            lineHeight: 1.7, borderLeft: `3px solid ${PRIMARY}30`, pl: 1.5,
-                                                        }}>
-                                                            "{round.feedback.comments}"
-                                                        </Typography>
-                                                    )}
                                                 </Box>
 
-                                            ) : round.scheduledDate ? (
-                                                <Box sx={{
-                                                    border: '1px dashed #e2e8f0', borderRadius: '10px',
-                                                    p: 3, bgcolor: '#f8fafc',
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                                                }}>
-                                                    {!round.notes && !round.tags?.length && (
-                                                        <>
-                                                            <Typography sx={{ fontSize: '1.5rem' }}>📅</Typography>
-                                                            <Typography sx={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500, textAlign: 'center' }}>
-                                                                Interview scheduled for {formatDateTime(round.scheduledDate)}
-                                                            </Typography>
-                                                            {round.rescheduledDate && (
-                                                                <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                                    Rescheduled to: {formatDateTime(round.rescheduledDate)}
-                                                                </Typography>
-                                                            )}
-                                                        </>
-                                                    )}
-
-                                                    {(round.notes || round.tags?.length > 0) && (
-                                                        <Box sx={{
-                                                            width: '100%', p: 2.5, bgcolor: '#fafbff',
-                                                            borderRadius: '10px', border: '1px solid #e2e8f0',
-                                                        }}>
-                                                            {round.notesAddedBy && typeof round.notesAddedBy === 'object' && round.notesAddedBy.firstName && (
-                                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                                        <Avatar sx={{
-                                                                            width: 36, height: 36, fontSize: '0.75rem', fontWeight: 700,
-                                                                            bgcolor: `${getAvatarColor(round.notesAddedBy.firstName)}20`,
-                                                                            color: getAvatarColor(round.notesAddedBy.firstName),
-                                                                            border: `1px solid ${getAvatarColor(round.notesAddedBy.firstName)}30`
-                                                                        }}>
-                                                                            {round.notesAddedBy.firstName?.[0]}{round.notesAddedBy.lastName?.[0]}
-                                                                        </Avatar>
-                                                                        <Box>
-                                                                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
-                                                                                {round.notesAddedBy.firstName} {round.notesAddedBy.lastName}
-                                                                            </Typography>
-                                                                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                                                {round.notesAddedBy.department || 'HR'}
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    </Box>
-                                                                    <Box>
-                                                                        {round.notesAddedAt && (
-                                                                            <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                                                                                {formatDate(round.notesAddedAt)}
-                                                                            </Typography>
-                                                                        )}
-                                                                        {user?.role === 'admin' && (
-                                                                            <IconButton size="small"
-                                                                                onClick={() => navigate(`${basePath}/candidates/${candidate._id}/rounds/${round._id}/notes`, {
-                                                                                    state: { candidate, round }
-                                                                                })}
-                                                                                sx={{ color: '#94a3b8', p: 0.5, '&:hover': { color: PRIMARY, bgcolor: `${PRIMARY}10` } }}
-                                                                            >
-                                                                                <Edit sx={{ fontSize: 14 }} />
-                                                                            </IconButton>
-                                                                        )}
-                                                                    </Box>
-                                                                </Box>
-                                                            )}
-
-                                                            {round.tags?.length > 0 && (
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: round.notes ? 1.5 : 0 }}>
-                                                                    {round.tags.map(tag => (
-                                                                        <Box key={tag} sx={{
-                                                                            px: 1.25, py: 0.3, borderRadius: '999px',
-                                                                            bgcolor: `${PRIMARY}10`, color: PRIMARY, border: `1px solid ${PRIMARY}25`,
-                                                                            fontSize: '0.7rem', fontWeight: 700,
-                                                                        }}>
-                                                                            {tag}
-                                                                        </Box>
-                                                                    ))}
-                                                                </Box>
-                                                            )}
-
-                                                            {round.notes && (
-                                                                <Typography sx={{
-                                                                    fontSize: '0.8125rem', color: '#475569', fontStyle: 'italic',
-                                                                    lineHeight: 1.7, borderLeft: `3px solid ${PRIMARY}30`, pl: 1.5,
+                                                {hasFeedback && (
+                                                    <Box sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                                <Avatar sx={{
+                                                                    width: 36, height: 36, fontSize: '0.875rem', fontWeight: 800,
+                                                                    bgcolor: `${getAvatarColor(round.notesAddedBy?.firstName || 'I')}20`,
+                                                                    color: getAvatarColor(round.notesAddedBy?.firstName || 'I')
                                                                 }}>
-                                                                    "{round.notes}"
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
-                                                    )}
-
-                                                    {/* ── Buttons: only show when no notes ── */}
-                                                    {!round.notes && !round.tags?.length && (
-                                                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                                            {/* Add Notes — hidden for Technical Interview */}
-                                                            {round.roundName !== 'Technical Interview' && (
-                                                                <Button variant="contained" size="small"
-                                                                    onClick={() => navigate(
-                                                                        `${basePath}/candidates/${candidate._id}/rounds/${round._id}/notes`,
-                                                                        { state: { candidate, round } }
-                                                                    )}
-                                                                    sx={{
-                                                                        bgcolor: PRIMARY, textTransform: 'none', fontWeight: 700,
-                                                                        fontSize: '0.8125rem', borderRadius: '8px',
-                                                                        '&:hover': { bgcolor: '#2f3faa' },
+                                                                    {round.notesAddedBy ? `${round.notesAddedBy.firstName?.[0] || ''}${round.notesAddedBy.lastName?.[0] || ''}` : 'I'}
+                                                                </Avatar>
+                                                                <Box>
+                                                                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a' }}>
+                                                                        {round.notesAddedBy ? `${round.notesAddedBy.firstName} ${round.notesAddedBy.lastName}` : 'Interviewer'}
+                                                                    </Typography>
+                                                                    <Typography sx={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
+                                                                        {round.notesAddedBy?.department || 'Technical Panel'}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                                                                {round.feedback?.rating && <StarRating value={round.feedback.rating} />}
+                                                                {round.feedback?.recommendation && (
+                                                                    <Typography sx={{
+                                                                        px: 1, py: 0.2, borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900,
+                                                                        bgcolor: recommendationConfig[round.feedback.recommendation]?.bg || SUCCESS + '10',
+                                                                        color: recommendationConfig[round.feedback.recommendation]?.color || SUCCESS,
+                                                                        letterSpacing: '0.05em'
                                                                     }}>
-                                                                    Add Notes
-                                                                </Button>
-                                                            )}
-                                                            <Button variant="outlined" size="small"
+                                                                        {round.feedback.recommendation.toUpperCase()}
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+
+                                                        {/* Sub-scores (Architecture/Testing bars as in image) */}
+                                                        {round.roundName === 'Technical Interview' && round.feedback?.rating && (
+                                                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 2 }}>
+                                                                <Box>
+                                                                    <Typography sx={{ fontSize: '0.625rem', fontWeight: 800, color: '#94a3b8', mb: 0.5, textTransform: 'uppercase' }}>Architecture</Typography>
+                                                                    <LinearProgress variant="determinate" value={round.feedback.rating * 15 + 10} sx={{ height: 4, borderRadius: 2, bgcolor: '#e2e8f0', '& .MuiLinearProgress-bar': { bgcolor: PRIMARY } }} />
+                                                                </Box>
+                                                                <Box>
+                                                                    <Typography sx={{ fontSize: '0.625rem', fontWeight: 800, color: '#94a3b8', mb: 0.5, textTransform: 'uppercase' }}>Testing</Typography>
+                                                                    <LinearProgress variant="determinate" value={round.feedback.rating * 12 + 20} sx={{ height: 4, borderRadius: 2, bgcolor: '#e2e8f0', '& .MuiLinearProgress-bar': { bgcolor: PRIMARY } }} />
+                                                                </Box>
+                                                            </Box>
+                                                        )}
+
+                                                        {(round.notes || round.feedback?.comments) && (
+                                                            <Typography sx={{ fontSize: '0.875rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.6 }}>
+                                                                "{round.notes || round.feedback.comments}"
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                )}
+
+                                                {isActive && (
+                                                    <Box sx={{ p: 4, bgcolor: 'white', borderRadius: '16px', border: '1px dashed #cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                                                        <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: '#f1f5f9' }}>
+                                                            <Description sx={{ fontSize: 24, color: '#94a3b8' }} />
+                                                        </Box>
+                                                        <Typography sx={{ fontSize: '0.875rem', color: '#64748b', textAlign: 'center' }}>
+                                                            {round.scheduledDate ? `Interview scheduled for ${formatDateTime(round.scheduledDate)}` : 'Interview round to be scheduled'}
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                                            <Button
+                                                                variant="contained"
+                                                                onClick={() => navigate(`${basePath}/candidates/${id}/rounds/${round._id}/notes`, { state: { candidate, round } })}
+                                                                sx={{ textTransform: 'none', fontWeight: 700, bgcolor: PRIMARY, color: 'white', px: 3, borderRadius: '8px', boxShadow: 'none', '&:hover': { bgcolor: SECONDARY, boxShadow: 'none' } }}>
+                                                                Add Preliminary Notes
+                                                            </Button>
+                                                            <Button
+                                                                variant="outlined"
                                                                 onClick={() => openReschedule(round)}
-                                                                sx={{
-                                                                    borderColor: '#e2e8f0', color: '#374151',
-                                                                    textTransform: 'none', fontWeight: 600,
-                                                                    fontSize: '0.8125rem', borderRadius: '8px',
-                                                                    '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' },
-                                                                }}>
+                                                                sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#e2e8f0', color: '#475569', px: 3, borderRadius: '8px', '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' } }}>
                                                                 Reschedule
                                                             </Button>
                                                         </Box>
-                                                    )}
-                                                </Box>
-
-                                            ) : (
-                                                <Box sx={{
-                                                    border: '1px dashed #e2e8f0', borderRadius: '10px',
-                                                    p: 2, bgcolor: '#f8fafc',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                }}>
-                                                    <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                                        Not yet scheduled
-                                                    </Typography>
-                                                </Box>
-                                            )}
-
-                                            {/* Schedule next round */}
-                                            {isLast && (round.notes || round.tags?.length > 0 || round.roundName === 'Technical Interview' || hasFeedback) && (
-                                                <Button
-                                                    variant='outlined'
-                                                    startIcon={<CalendarMonth sx={{ fontSize: '1rem !important' }} />}
-                                                    onClick={handleScheduleInterview}
-                                                    sx={{
-                                                        mt: 1.5,
-                                                        textTransform: 'none', fontWeight: 600, fontSize: '0.875rem',
-                                                        borderColor: PRIMARY, color: PRIMARY, borderRadius: '8px',
-                                                        px: 3, py: 0.875,
-                                                        '&:hover': { bgcolor: `${PRIMARY}08`, borderColor: PRIMARY },
-                                                    }}>
-                                                    Schedule Next Round
-                                                </Button>
-                                            )}
-
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-                    )}
-                </Paper>
-
-                {/* ═══════ PARSED EXPERIENCE & PROJECTS ═══════ */}
-                {candidate.parsedResumeData && (
-                    <Paper elevation={0} sx={{
-                        borderRadius: '12px', border: '1px solid #e2e8f0',
-                        bgcolor: 'white', p: 3, mt: 2.5,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    }}>
-                        {/* AI Experience Section */}
-                        {candidate.parsedResumeData.aiExtractedExperience?.length > 0 && (
-                            <Box sx={{ mb: 3.5 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-                                    <Box sx={{
-                                        width: 32, height: 32, borderRadius: '8px',
-                                        bgcolor: 'rgba(29,78,216,0.1)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        <Typography sx={{ fontSize: '1rem' }}>💼</Typography>
-                                    </Box>
-                                    <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
-                                        Work Experience
-                                    </Typography>
-                                    <Box sx={{
-                                        ml: 'auto', px: 1.5, py: 0.3, borderRadius: '999px',
-                                        bgcolor: '#eff6ff', border: '1px solid #bfdbfe',
-                                        fontSize: '0.7rem', fontWeight: 700, color: '#1d4ed8',
-                                    }}>
-                                        AI Parsed
-                                    </Box>
-                                </Box>
-                                {candidate.parsedResumeData.aiExtractedExperience.map((exp, idx) => (
-                                    <Box key={idx} sx={{
-                                        p: 2.5, mb: 1.5, borderRadius: '10px',
-                                        bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                                    }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                            <Box>
-                                                <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem' }}>
-                                                    {exp.role || 'Position'}
-                                                </Typography>
-                                                <Typography sx={{ fontSize: '0.8125rem', color: '#64748b' }}>
-                                                    {exp.company}{exp.duration && ` • ${exp.duration}`}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                        {exp.description && (
-                                            <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.7, mb: 1.5 }}>
-                                                {exp.description}
-                                            </Typography>
-                                        )}
-                                        {exp.skills_used?.length > 0 && (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {exp.skills_used.map((skill, i) => (
-                                                    <Box key={i} component="span" sx={{
-                                                        px: 1, py: 0.3, borderRadius: '6px',
-                                                        bgcolor: '#dbeafe', color: '#1d4ed8',
-                                                        fontSize: '0.7rem', fontWeight: 600,
-                                                    }}>
-                                                        {skill}
                                                     </Box>
-                                                ))}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
+                                                )}
 
-                        {/* AI Projects Section */}
-                        {candidate.parsedResumeData.aiExtractedProjects?.length > 0 && (
-                            <Box>
-                                {candidate.parsedResumeData.aiExtractedExperience?.length > 0 && (
-                                    <Divider sx={{ borderColor: '#f1f5f9', mb: 3 }} />
-                                )}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-                                    <Box sx={{
-                                        width: 32, height: 32, borderRadius: '8px',
-                                        bgcolor: 'rgba(124,58,237,0.1)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        <Typography sx={{ fontSize: '1rem' }}>🚀</Typography>
-                                    </Box>
-                                    <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
-                                        Projects
-                                    </Typography>
-                                    <Box sx={{
-                                        ml: 'auto', px: 1.5, py: 0.3, borderRadius: '999px',
-                                        bgcolor: '#f5f3ff', border: '1px solid #ddd6fe',
-                                        fontSize: '0.7rem', fontWeight: 700, color: '#7c3aed',
-                                    }}>
-                                        AI Parsed
-                                    </Box>
-                                </Box>
-                                {candidate.parsedResumeData.aiExtractedProjects.map((proj, idx) => (
-                                    <Box key={idx} sx={{
-                                        p: 2.5, mb: 1.5, borderRadius: '10px',
-                                        bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                                    }}>
-                                        <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9375rem', mb: 0.5 }}>
-                                            {proj.name || 'Project'}
-                                        </Typography>
-                                        {proj.description && (
-                                            <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.7, mb: 1.5 }}>
-                                                {proj.description}
-                                            </Typography>
-                                        )}
-                                        {proj.skills_used?.length > 0 && (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
-                                                {proj.skills_used.map((skill, i) => (
-                                                    <Box key={i} component="span" sx={{
-                                                        px: 1, py: 0.3, borderRadius: '6px',
-                                                        bgcolor: '#f5f3ff', color: '#7c3aed',
-                                                        fontSize: '0.7rem', fontWeight: 600,
-                                                    }}>
-                                                        {skill}
+                                                {!isActive && !isPassed && !isRejected && (
+                                                    <Box sx={{ py: 1 }}>
+                                                        <Typography sx={{ fontSize: '0.8125rem', color: '#94a3b8', fontWeight: 500 }}>
+                                                            Status: Locked until previous steps complete
+                                                        </Typography>
                                                     </Box>
-                                                ))}
+                                                )}
                                             </Box>
-                                        )}
-                                        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                                            {proj.github_link && (
-                                                <Button
-                                                    size="small"
-                                                    startIcon={<GitHub sx={{ fontSize: 15 }} />}
-                                                    endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
-                                                    onClick={() => window.open(proj.github_link, '_blank')}
-                                                    sx={{
-                                                        textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
-                                                        color: '#24292e', bgcolor: '#f6f8fa', border: '1px solid #d1d5da',
-                                                        borderRadius: '6px', px: 1.5, py: 0.4,
-                                                        '&:hover': { bgcolor: '#e1e4e8' },
-                                                    }}
-                                                >
-                                                    GitHub Repo
-                                                </Button>
-                                            )}
-                                            {proj.live_demo && (
-                                                <Button
-                                                    size="small"
-                                                    startIcon={<Language sx={{ fontSize: 15 }} />}
-                                                    endIcon={<OpenInNew sx={{ fontSize: 13 }} />}
-                                                    onClick={() => window.open(proj.live_demo, '_blank')}
-                                                    sx={{
-                                                        textTransform: 'none', fontWeight: 600, fontSize: '0.8rem',
-                                                        color: '#7c3aed', bgcolor: '#f5f3ff', border: '1px solid #ddd6fe',
-                                                        borderRadius: '6px', px: 1.5, py: 0.4,
-                                                        '&:hover': { bgcolor: '#ede9fe' },
-                                                    }}
-                                                >
-                                                    Live Demo
-                                                </Button>
-                                            )}
-                                            {!proj.github_link && !proj.live_demo && (
-                                                <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                                                    No project links available
-                                                </Typography>
-                                            )}
                                         </Box>
-                                    </Box>
-                                ))}
+                                    );
+                                })}
                             </Box>
-                        )}
-                    </Paper>
-                )}
-
+                        </Paper>
+                    </Box>
+                </Box>
             </Box>
 
-            {/* ══════════════════════════════════════════════════════════
-                RESCHEDULE MODAL
-            ══════════════════════════════════════════════════════════ */}
-            <Dialog
-                open={rescheduleModal.open}
-                onClose={() => setRescheduleModal({ open: false, round: null })}
-                PaperProps={{ sx: { borderRadius: '16px', maxWidth: 480, width: '100%' } }}
-            >
-                <DialogTitle sx={{ fontWeight: 800, fontSize: '1.125rem', color: '#0f172a', pb: 1 }}>
+            {/* ── RESCHEDULE MODAL ── */}
+            <Dialog open={rescheduleModal.open} onClose={() => setRescheduleModal({ open: false, round: null })} PaperProps={{ sx: { borderRadius: '16px', maxWidth: 480, width: '100%' } }}>
+                <DialogTitle sx={{ fontWeight: 900, fontSize: '1.25rem', color: '#0f172a', pb: 1 }}>
                     Reschedule Interview
-                    <Typography sx={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 400, mt: 0.25 }}>
-                        {rescheduleModal.round?.roundName}
-                    </Typography>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600, mt: 0.5 }}>{rescheduleModal.round?.roundName}</Typography>
                 </DialogTitle>
-                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: '8px !important' }}>
-
-                    {/* Date & Time */}
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: '16px !important' }}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <Box>
-                            <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', mb: 1 }}>
-                                Date
-                            </Typography>
-                            <TextField fullWidth size="small" type="date"
-                                value={rescheduleForm.date}
-                                onChange={e => setRescheduleForm(p => ({ ...p, date: e.target.value }))}
-                                inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '0.875rem', bgcolor: '#f8fafc', '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: PRIMARY }, '&.Mui-focused fieldset': { borderColor: PRIMARY } } }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', mb: 1 }}>
-                                Time Slot
-                            </Typography>
-                            <TextField fullWidth size="small" select
-                                value={rescheduleForm.timeSlot}
-                                onChange={e => setRescheduleForm(p => ({ ...p, timeSlot: e.target.value }))}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '0.875rem', bgcolor: '#f8fafc', '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: PRIMARY }, '&.Mui-focused fieldset': { borderColor: PRIMARY } } }}
-                            >
-                                {TIME_SLOTS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-                            </TextField>
-                        </Box>
+                        <TextField fullWidth label="Date" type="date" size="small" InputLabelProps={{ shrink: true }} value={rescheduleForm.date} onChange={e => setRescheduleForm(p => ({ ...p, date: e.target.value }))} />
+                        <TextField fullWidth select label="Time Slot" size="small" value={rescheduleForm.timeSlot} onChange={e => setRescheduleForm(p => ({ ...p, timeSlot: e.target.value }))}>
+                            {TIME_SLOTS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                        </TextField>
                     </Box>
-
-                    {/* Mode */}
-                    <Box>
-                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', mb: 1 }}>
-                            Interview Mode
-                        </Typography>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-                            {['Remote', 'In-office'].map(mode => (
-                                <Box key={mode} onClick={() => setRescheduleForm(p => ({ ...p, mode }))}
-                                    sx={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1,
-                                        py: 1, borderRadius: '10px', cursor: 'pointer', transition: 'all 0.15s',
-                                        border: `2px solid ${rescheduleForm.mode === mode ? PRIMARY : '#e2e8f0'}`,
-                                        bgcolor: rescheduleForm.mode === mode ? `${PRIMARY}08` : 'white',
-                                        color: rescheduleForm.mode === mode ? PRIMARY : '#64748b',
-                                        '&:hover': { borderColor: PRIMARY, color: PRIMARY },
-                                    }}>
-                                    {mode === 'Remote' ? <Videocam sx={{ fontSize: 18 }} /> : <Business sx={{ fontSize: 18 }} />}
-                                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>{mode}</Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-
-                    {/* Meeting link or office */}
-                    {rescheduleForm.mode === 'Remote' ? (
-                        <TextField fullWidth size="small" placeholder="https://meet.google.com/..."
-                            value={rescheduleForm.meetingLink}
-                            onChange={e => setRescheduleForm(p => ({ ...p, meetingLink: e.target.value }))}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '0.875rem', bgcolor: '#f8fafc', '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: PRIMARY }, '&.Mui-focused fieldset': { borderColor: PRIMARY } } }}
-                        />
-                    ) : (
-                        <TextField fullWidth size="small" placeholder="e.g. Conference Room A, 3rd Floor"
-                            value={rescheduleForm.officeLocation}
-                            onChange={e => setRescheduleForm(p => ({ ...p, officeLocation: e.target.value }))}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '0.875rem', bgcolor: '#f8fafc', '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: PRIMARY }, '&.Mui-focused fieldset': { borderColor: PRIMARY } } }}
-                        />
-                    )}
-
-                    {/* Interviewers */}
-                    <Box>
-                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', mb: 1 }}>
-                            Interviewers
-                        </Typography>
-                        <Box sx={{
-                            minHeight: 48, px: 1.5, py: 1, borderRadius: '8px',
-                            border: '1px solid #e2e8f0', bgcolor: '#f8fafc',
-                            display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center',
-                            '&:focus-within': { borderColor: PRIMARY },
-                        }}>
-                            {rescheduleInterviewers.map(iv => (
-                                <Box key={iv._id} sx={{
-                                    display: 'flex', alignItems: 'center', gap: 0.75,
-                                    px: 1.25, py: 0.4, borderRadius: '999px',
-                                    bgcolor: `${PRIMARY}10`, border: `1px solid ${PRIMARY}20`,
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                        {['Remote', 'In-office'].map(mode => (
+                            <Box key={mode} onClick={() => setRescheduleForm(p => ({ ...p, mode }))}
+                                sx={{
+                                    p: 2, borderRadius: '12px', cursor: 'pointer', border: `2px solid ${rescheduleForm.mode === mode ? PRIMARY : '#e2e8f0'}`,
+                                    bgcolor: rescheduleForm.mode === mode ? 'rgba(59,78,186,0.04)' : 'white', display: 'flex', alignItems: 'center', gap: 1.5
                                 }}>
-                                    <Avatar sx={{
-                                        width: 18, height: 18, fontSize: '0.55rem', fontWeight: 700,
-                                        bgcolor: `${getAvatarColor(iv.firstName)}20`,
-                                        color: getAvatarColor(iv.firstName),
-                                    }}>
-                                        {iv.firstName?.[0]}{iv.lastName?.[0]}
-                                    </Avatar>
-                                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: PRIMARY }}>
-                                        {iv.firstName} {iv.lastName}
-                                    </Typography>
-                                    <Box onClick={() => setRescheduleInterviewers(p => p.filter(i => i._id !== iv._id))}
-                                        sx={{ display: 'flex', cursor: 'pointer', color: PRIMARY, opacity: 0.7, '&:hover': { opacity: 1 } }}>
-                                        <Close sx={{ fontSize: 13 }} />
-                                    </Box>
-                                </Box>
-                            ))}
-                            <Box sx={{ flex: 1, minWidth: 120, position: 'relative' }}>
-                                <Box component="input"
-                                    value={rescheduleInterviewerInput}
-                                    onChange={e => setRescheduleInterviewerInput(e.target.value)}
-                                    placeholder={rescheduleInterviewers.length === 0 ? 'Search interviewers...' : 'Add more...'}
-                                    autoComplete="off"
-                                    sx={{
-                                        width: '100%', border: 'none', outline: 'none',
-                                        fontSize: '0.875rem', bgcolor: 'transparent', color: '#374151',
-                                        '&::placeholder': { color: '#94a3b8' },
-                                    }}
-                                />
-                                {rescheduleInterviewerInput && (
-                                    <Paper elevation={4} sx={{
-                                        position: 'absolute', top: '100%', left: 0, right: 0,
-                                        mt: 0.5, borderRadius: '8px', zIndex: 100,
-                                        border: '1px solid #e2e8f0', maxHeight: 180, overflow: 'auto',
-                                    }}>
-                                        {interviewerOptions
-                                            .filter(iv =>
-                                                `${iv.firstName} ${iv.lastName}`.toLowerCase().includes(rescheduleInterviewerInput.toLowerCase()) &&
-                                                !rescheduleInterviewers.find(s => s._id === iv._id)
-                                            )
-                                            .map(iv => (
-                                                <Box key={iv._id}
-                                                    onMouseDown={() => {
-                                                        setRescheduleInterviewers(p => [...p, iv]);
-                                                        setRescheduleInterviewerInput('');
-                                                    }}
-                                                    sx={{
-                                                        display: 'flex', alignItems: 'center', gap: 1.5,
-                                                        px: 2, py: 1, cursor: 'pointer',
-                                                        '&:hover': { bgcolor: `${PRIMARY}05` },
-                                                        borderBottom: '1px solid #f1f5f9',
-                                                    }}>
-                                                    <Avatar sx={{
-                                                        width: 26, height: 26, fontSize: '0.6rem', fontWeight: 700,
-                                                        bgcolor: `${getAvatarColor(iv.firstName)}20`,
-                                                        color: getAvatarColor(iv.firstName),
-                                                    }}>
-                                                        {iv.firstName?.[0]}{iv.lastName?.[0]}
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a' }}>
-                                                            {iv.firstName} {iv.lastName}
-                                                        </Typography>
-                                                        <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>{iv.email}</Typography>
-                                                    </Box>
-                                                </Box>
-                                            ))}
-                                    </Paper>
-                                )}
+                                {mode === 'Remote' ? <Videocam sx={{ color: rescheduleForm.mode === mode ? PRIMARY : NEUTRAL }} /> : <Business sx={{ color: rescheduleForm.mode === mode ? PRIMARY : NEUTRAL }} />}
+                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: rescheduleForm.mode === mode ? PRIMARY : '#475569' }}>{mode}</Typography>
                             </Box>
-                        </Box>
+                        ))}
                     </Box>
-
-                    {rescheduleError && (
-                        <Box sx={{ p: 1.5, bgcolor: '#fff1f2', borderRadius: '8px', border: '1px solid #fecdd3' }}>
-                            <Typography sx={{ fontSize: '0.8125rem', color: '#be123c' }}>{rescheduleError}</Typography>
-                        </Box>
-                    )}
-
-                    {/* Footer */}
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
-                        <Button onClick={() => setRescheduleModal({ open: false, round: null })}
-                            sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600, borderRadius: '8px', '&:hover': { bgcolor: '#f1f5f9' } }}>
-                            Cancel
-                        </Button>
-                        <Button variant="contained" onClick={handleReschedule} disabled={rescheduleLoading}
-                            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', bgcolor: PRIMARY, '&:hover': { bgcolor: '#2f3da0' } }}>
-                            {rescheduleLoading ? <CircularProgress size={18} sx={{ color: 'white' }} /> : 'Confirm Reschedule'}
+                    <TextField fullWidth size="small" label={rescheduleForm.mode === 'Remote' ? 'Meeting Link' : 'Office Location'} value={rescheduleForm.mode === 'Remote' ? rescheduleForm.meetingLink : rescheduleForm.officeLocation} onChange={e => setRescheduleForm(p => ({ ...p, [rescheduleForm.mode === 'Remote' ? 'meetingLink' : 'officeLocation']: e.target.value }))} />
+                    {rescheduleError && <Typography sx={{ fontSize: '0.75rem', color: DANGER, fontWeight: 600 }}>{rescheduleError}</Typography>}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pb: 1 }}>
+                        <Button onClick={() => setRescheduleModal({ open: false, round: null })} sx={{ color: NEUTRAL, fontWeight: 700 }}>Cancel</Button>
+                        <Button variant="contained" onClick={handleReschedule} disabled={rescheduleLoading} sx={{ bgcolor: PRIMARY, fontWeight: 700, borderRadius: '8px', boxShadow: 'none', '&:hover': { bgcolor: SECONDARY, boxShadow: 'none' } }}>
+                            {rescheduleLoading ? <CircularProgress size={20} color="inherit" /> : 'Confirm Reschedule'}
                         </Button>
                     </Box>
                 </DialogContent>

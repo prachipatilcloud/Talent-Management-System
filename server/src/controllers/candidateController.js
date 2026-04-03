@@ -210,7 +210,7 @@ export const updateCandidate = async (req, res, next) => {
         }
         
         // ── Scalar fields ────────────────────────────────────────────
-        const scalarFields = ['firstName', 'lastName', 'email', 'experience', 'jobRole'];
+        const scalarFields = ['firstName', 'lastName', 'email', 'experience', 'jobRole', 'github', 'linkedin', 'portfolio'];
         scalarFields.forEach(field => {
             if (req.body[field] !== undefined) candidate[field] = req.body[field];
         });
