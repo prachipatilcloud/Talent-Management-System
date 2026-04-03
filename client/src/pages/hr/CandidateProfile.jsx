@@ -17,7 +17,7 @@ import {
     GitHub, LinkedIn, Language,
     MoreHoriz, Lock,
     Description, Archive as ArchiveIcon,
-    ChevronRight, PlayArrow
+    ChevronRight, PlayArrow, WorkspacePremium
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -67,6 +67,25 @@ const formatDate = (d) =>
 
 const formatDateTime = (d) =>
     d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+const skillColors = [
+    { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }, // blue
+    { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }, // green
+    { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff' }, // purple
+    { bg: '#fff1f2', color: '#be123c', border: '#fecdd3' }, // rose/pink
+    { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5' }, // orange
+    { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' }, // slate
+    { bg: '#ecfeff', color: '#0f766e', border: '#a5f3fc' }, // cyan
+];
+
+const getSkillStyle = (skillName) => {
+    let hash = 0;
+    for (let i = 0; i < (skillName?.length || 0); i++) {
+        hash = skillName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % skillColors.length;
+    return skillColors[idx];
+};
 
 const StarRating = ({ value = 0 }) => (
     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -376,6 +395,28 @@ const CandidateProfile = () => {
                                     <Typography sx={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>{candidate.phone || '+1 (555) 000-0000'}</Typography>
                                 </Box>
                             </Stack>
+                        </Paper>
+
+                        {/* Key Skills */}
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <SectionHeader icon={<WorkspacePremium fontSize="small" />} title="Key Skills" />
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                                {candidate.skills?.length > 0 ? candidate.skills.map((skill) => {
+                                    const style = getSkillStyle(skill);
+                                    return (
+                                        <Box key={skill} component="span" sx={{
+                                            px: 1.5, py: 0.5, borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700,
+                                            bgcolor: style.bg, color: style.color, border: `1px solid ${style.border}`
+                                        }}>
+                                            {skill}
+                                        </Box>
+                                    );
+                                }) : (
+                                    <Typography sx={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                        No key skills listed.
+                                    </Typography>
+                                )}
+                            </Box>
                         </Paper>
 
                         {/* Professional Background */}
