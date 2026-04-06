@@ -30,4 +30,4 @@ router.put('/:id', authorize('admin', 'hr'), upload.single('resume'), updateCand
 router.patch('/:id/status', authorize('admin', 'hr'), updateCandidateStatus)
 router.delete('/:id', authorize('admin', 'hr'), deleteCandidate)
 
-export default router;
+export default router;  
