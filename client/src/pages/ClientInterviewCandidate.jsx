@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, Paper, TextField, Button, CircularProgress, Avatar, Rating } from '@mui/material';
 import API from '../api/axios';
+import UniversalFeedbackForm from '../components/common/UniversalFeedbackForm';
 
 const PRIMARY = '#3b4eba';
 
@@ -16,13 +17,6 @@ const ClientInterviewCandidate = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     
-    // Form
-    const [form, setForm] = useState({
-        interviewerName: '',
-        company: '',
-        rating: 0,
-        feedback: ''
-    });
     const [submitting, setSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [submitError, setSubmitError] = useState('');
@@ -42,25 +36,12 @@ const ClientInterviewCandidate = () => {
         fetchCandidate();
     }, [id]);
 
-    const handleFormChange = (field) => (e) => {
-        setForm({ ...form, [field]: e.target.value });
-    };
-
-    const handleRatingChange = (event, newValue) => {
-        setForm({ ...form, rating: newValue });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (formData) => {
         setSubmitError('');
-        if(!form.interviewerName || !form.company || !form.rating || !form.feedback) {
-            setSubmitError('All fields are required');
-            return;
-        }
 
         setSubmitting(true);
         try {
-            await API.post(`/public/candidate/${id}/client-feedback`, form);
+            await API.post(`/public/candidate/${id}/client-feedback`, formData);
             setSubmitSuccess(true);
         } catch(err) {
             setSubmitError('Failed to submit feedback. Please try again later.');
@@ -166,77 +147,27 @@ const ClientInterviewCandidate = () => {
                 </Paper>
 
                 {/* Feedback Form */}
-                <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0', bgcolor: 'white' }}>
-                    <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', mb: 3 }}>Client Feedback</Typography>
-                    
-                    {submitSuccess ? (
+                {submitSuccess ? (
+                    <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0', bgcolor: 'white' }}>
+                        <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', mb: 3 }}>Client Feedback</Typography>
                         <Box sx={{ p: 3, borderRadius: '12px', bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
                             <Typography sx={{ color: '#15803d', fontWeight: 700, mb: 1 }}>Thank you!</Typography>
                             <Typography sx={{ color: '#166534', fontSize: '0.875rem' }}>Your feedback has been successfully submitted.</Typography>
                         </Box>
-                    ) : (
-                        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
-                                <TextField 
-                                    label="Interviewer Name" 
-                                    variant="outlined" 
-                                    size="small" 
-                                    fullWidth 
-                                    value={form.interviewerName}
-                                    onChange={handleFormChange('interviewerName')}
-                                    required
-                                />
-                                <TextField 
-                                    label="Company" 
-                                    variant="outlined" 
-                                    size="small" 
-                                    fullWidth 
-                                    value={form.company}
-                                    onChange={handleFormChange('company')}
-                                    required
-                                />
-                            </Box>
-                            
-                            <Box>
-                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#475569', mb: 1 }}>Rating (1 - 10)</Typography>
-                                <Rating 
-                                    max={10} 
-                                    value={form.rating} 
-                                    onChange={handleRatingChange} 
-                                    size="large"
-                                    sx={{ color: '#f59e0b' }}
-                                />
-                            </Box>
-
-                            <TextField 
-                                label="Detailed Feedback" 
-                                variant="outlined" 
-                                multiline 
-                                rows={4} 
-                                fullWidth 
-                                value={form.feedback}
-                                onChange={handleFormChange('feedback')}
-                                required
-                            />
-
-                            {submitError && (
-                                <Typography sx={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: 600 }}>{submitError}</Typography>
-                            )}
-
-                            <Button 
-                                type="submit" 
-                                variant="contained" 
-                                disabled={submitting}
-                                sx={{ 
-                                    bgcolor: PRIMARY, py: 1.5, fontWeight: 700, borderRadius: '8px',
-                                    '&:hover': { bgcolor: '#2f3faa' }
-                                }}
-                            >
-                                {submitting ? <CircularProgress size={24} color="inherit" /> : 'Submit Feedback'}
-                            </Button>
-                        </Box>
-                    )}
-                </Paper>
+                    </Paper>
+                ) : (
+                    <UniversalFeedbackForm
+                        isPublic={true}
+                        submitting={submitting}
+                        error={submitError}
+                        onSubmit={handleSubmit}
+                        initialData={{ 
+                            candidateName: `${firstName} ${lastName}`, 
+                            positionAppliedFor: jobRole, 
+                            interviewStage: 'Client Interview' 
+                        }}
+                    />
+                )}
 
             </Box>
         </Box>

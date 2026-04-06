@@ -13,6 +13,7 @@ import {
     Star, StarBorder, StarHalf,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import UniversalFeedbackForm from '../../components/common/UniversalFeedbackForm';
 
 const PRIMARY = '#3b4eba';
 const GREEN = '#16a34a';
@@ -33,6 +34,10 @@ const recommendationConfig = {
     'Hire': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
     'No Hire': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3' },
     'Maybe': { bg: '#fefce8', color: '#a16207', border: '#fef08a' },
+    'Shortlisted': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+    'On-hold': { bg: '#fefce8', color: '#a16207', border: '#fef08a' },
+    'Rejected but can be re-approached in future': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3' },
+    'Rejected-Poor Rating': { bg: '#fef2f2', color: '#991b1b', border: '#fca5a5' },
 };
 
 // ── Interactive Star Rating ───────────────────────────────────────
@@ -47,9 +52,9 @@ const StarRatingInput = ({ value, onChange }) => (
 );
 
 // ── Display Star Rating ───────────────────────────────────────────
-const StarRatingDisplay = ({ value = 0 }) => (
-    <Box sx={{ display: 'flex', gap: 0.25 }}>
-        {[1, 2, 3, 4, 5].map(i => (
+const StarRatingDisplay = ({ value = 0, max = 5 }) => (
+    <Box sx={{ display: 'flex', gap: 0.25, flexWrap: 'wrap' }}>
+        {Array.from({ length: max }, (_, i) => i + 1).map(i => (
             i <= Math.floor(value)
                 ? <Star key={i} sx={{ fontSize: 15, color: '#f59e0b' }} />
                 : i - 0.5 <= value
@@ -78,9 +83,6 @@ const InterviewerCandidateProfile = () => {
     const blobUrlRef = useRef(null);
 
     // Feedback form
-    const [rating, setRating] = useState(0);
-    const [recommendation, setRecommendation] = useState('');
-    const [comments, setComments] = useState('');
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -145,19 +147,17 @@ const InterviewerCandidateProfile = () => {
     )
     // fallback for old singular interviewer field 
 
-    const hasFeedback = !!(myRound?.feedback?.rating || myRound?.feedback?.comments);
+    const hasFeedback = !!(myRound?.feedback?.overallRating || myRound?.feedback?.rating || myRound?.feedback?.detailedComments || myRound?.feedback?.comments);
 
     // ── Submit feedback ─────────────────────────────────────────────
-    const handleSubmitFeedback = async () => {
-        if (!rating) { setSubmitError('Please select a rating'); return; }
-        if (!recommendation) { setSubmitError('Please select a recommendation'); return; }
+    const handleSubmitFeedback = async (formData) => {
         setSubmitLoading(true);
         setSubmitError('');
         try {
             const roundId = myRound._id;
             const res = await API.patch(
                 `/interviewer/candidates/${id}/rounds/${roundId}/feedback`,
-                { rating, recommendation, comments }
+                formData
             );
             setCandidate(res.data.candidate);
             setSubmitSuccess(true);
@@ -472,9 +472,9 @@ const InterviewerCandidateProfile = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <StarRatingDisplay value={myRound.feedback.rating} />
+                                                <StarRatingDisplay value={myRound.feedback.overallRating || myRound.feedback.rating} max={myRound.feedback.overallRating ? 10 : 5} />
                                                 <Typography sx={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
-                                                    {myRound.feedback.rating}/5
+                                                    {myRound.feedback.overallRating || myRound.feedback.rating}/{myRound.feedback.overallRating ? 10 : 5}
                                                 </Typography>
                                             </Box>
                                             {myRound.feedback.submittedAt && (
@@ -483,126 +483,43 @@ const InterviewerCandidateProfile = () => {
                                                 </Typography>
                                             )}
                                         </Box>
-                                        {myRound.feedback.recommendation && (() => {
-                                            const rec = recommendationConfig[myRound.feedback.recommendation];
+                                        {(myRound.feedback.overallRecommendation || myRound.feedback.recommendation) && (() => {
+                                            const rec = recommendationConfig[myRound.feedback.overallRecommendation || myRound.feedback.recommendation];
                                             return rec ? (
                                                 <Box sx={{
                                                     px: 1.5, py: 0.4, borderRadius: '6px',
                                                     bgcolor: rec.bg, color: rec.color, border: `1px solid ${rec.border}`,
-                                                    fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.04em',
+                                                    fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.04em', textAlign: 'center'
                                                 }}>
-                                                    {myRound.feedback.recommendation.toUpperCase()}
+                                                    {(myRound.feedback.overallRecommendation || myRound.feedback.recommendation).toUpperCase()}
                                                 </Box>
                                             ) : null;
                                         })()}
                                     </Box>
-                                    {myRound.feedback.comments && (
+                                    {(myRound.feedback.detailedComments || myRound.feedback.comments) && (
                                         <Typography sx={{
                                             fontSize: '0.8125rem', color: '#475569', fontStyle: 'italic',
                                             lineHeight: 1.7, borderLeft: `3px solid ${PRIMARY}30`, pl: 1.5,
                                         }}>
-                                            "{myRound.feedback.comments}"
+                                            "{myRound.feedback.detailedComments || myRound.feedback.comments}"
                                         </Typography>
                                     )}
                                 </Box>
 
                             ) : (
-                                // ── Feedback Form ──
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-
-                                    {/* Rating */}
-                                    <Box>
-                                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
-                                            Rating
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                            <StarRatingInput value={rating} onChange={setRating} />
-                                            {rating > 0 && (
-                                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b' }}>
-                                                    {rating}/5
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    </Box>
-
-                                    {/* Recommendation */}
-                                    <Box>
-                                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
-                                            Recommendation
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                            {['Hire', 'No Hire', 'Maybe'].map(r => {
-                                                const cfg = recommendationConfig[r];
-                                                const selected = recommendation === r;
-                                                return (
-                                                    <Box key={r} onClick={() => setRecommendation(r)} sx={{
-                                                        flex: 1, py: 1.25, borderRadius: '10px', textAlign: 'center',
-                                                        cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700,
-                                                        fontSize: '0.875rem',
-                                                        border: `2px solid ${selected ? cfg.color : '#e2e8f0'}`,
-                                                        bgcolor: selected ? cfg.bg : 'white',
-                                                        color: selected ? cfg.color : '#64748b',
-                                                        '&:hover': { borderColor: cfg.color, color: cfg.color },
-                                                    }}>
-                                                        {r}
-                                                    </Box>
-                                                );
-                                            })}
-                                        </Box>
-                                    </Box>
-
-                                    {/* Comments */}
-                                    <Box>
-                                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1.25 }}>
-                                            Comments
-                                        </Typography>
-                                        <TextField
-                                            fullWidth multiline minRows={4}
-                                            placeholder="Share your observations about the candidate's performance, technical skills, communication, and overall impression..."
-                                            value={comments}
-                                            onChange={e => setComments(e.target.value)}
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: '8px', fontSize: '0.875rem', bgcolor: '#f8fafc',
-                                                    '& fieldset': { borderColor: '#e2e8f0' },
-                                                    '&:hover fieldset': { borderColor: PRIMARY },
-                                                    '&.Mui-focused fieldset': { borderColor: PRIMARY, borderWidth: 2 },
-                                                },
-                                            }}
-                                        />
-                                    </Box>
-
-                                    {submitError && (
-                                        <Box sx={{ p: 1.5, bgcolor: '#fff1f2', borderRadius: '8px', border: '1px solid #fecdd3' }}>
-                                            <Typography sx={{ fontSize: '0.8125rem', color: '#be123c' }}>{submitError}</Typography>
-                                        </Box>
-                                    )}
-
-                                    {submitSuccess && (
-                                        <Box sx={{ p: 1.5, bgcolor: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                                            <Typography sx={{ fontSize: '0.8125rem', color: '#15803d', fontWeight: 600 }}>
-                                                ✓ Feedback submitted successfully!
-                                            </Typography>
-                                        </Box>
-                                    )}
-
-                                    {/* Footer */}
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1, borderTop: '1px solid #f1f5f9' }}>
-                                        <Button onClick={() => navigate('/interviewer/my-interviews')}
-                                            sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600, borderRadius: '8px', '&:hover': { bgcolor: '#f1f5f9' } }}>
-                                            Cancel
-                                        </Button>
-                                        <Button variant="contained" onClick={handleSubmitFeedback} disabled={submitLoading}
-                                            sx={{
-                                                textTransform: 'none', fontWeight: 700, borderRadius: '8px',
-                                                bgcolor: PRIMARY, px: 3,
-                                                boxShadow: '0 4px 14px rgba(59,78,186,0.25)',
-                                                '&:hover': { bgcolor: '#2f3da0' },
-                                            }}>
-                                            {submitLoading ? <CircularProgress size={18} sx={{ color: 'white' }} /> : 'Submit Feedback'}
-                                        </Button>
-                                    </Box>
-                                </Box>
+                                <UniversalFeedbackForm 
+                                    isPublic={false} 
+                                    submitting={submitLoading} 
+                                    error={submitError} 
+                                    onSubmit={handleSubmitFeedback} 
+                                    onCancel={() => navigate('/interviewer/my-interviews')} 
+                                    initialData={{ 
+                                        candidateName: `${candidate.firstName} ${candidate.lastName}`, 
+                                        positionAppliedFor: candidate.jobRole, 
+                                        interviewStage: myRound.roundName, 
+                                        interviewerName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() 
+                                    }} 
+                                />
                             )}
                         </Paper>
                     )}

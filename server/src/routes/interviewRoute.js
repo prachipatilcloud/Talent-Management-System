@@ -5,8 +5,8 @@ import { addInterviewRound, addNotesToRound, rescheduleRound } from '../controll
 const router = express.Router({ mergeParams: true });
 
 router.post("/", protect, authorize('admin', 'hr'), addInterviewRound)
-router.patch("/:roundId/notes",  protect, authorize('admin', 'hr'), addNotesToRound)
-router.patch("/:roundId/reschedule",  protect, authorize('admin', 'hr'), rescheduleRound)
+router.patch("/:roundId/notes", protect, authorize('admin', 'hr'), addNotesToRound)
+router.patch("/:roundId/reschedule", protect, authorize('admin', 'hr'), rescheduleRound)
 
 
 

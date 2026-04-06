@@ -32,7 +32,13 @@ router.get('/candidate/:candidateId', async (req, res) => {
 
 router.post('/candidate/:candidateId/client-feedback', async (req, res) => {
     try {
-        const { interviewerName, company, rating, feedback } = req.body;
+        const { 
+            interviewerName, interviewDateTime, positionAppliedFor, interviewStage,
+            educationalBackground, priorWorkExperience, technicalQualifications,
+            verbalCommunication, candidateInterest, teambuildingSkills,
+            overallRating, detailedComments, overallRecommendation,
+            keyStrengths, areasForImprovement
+        } = req.body;
         
         const candidate = await Candidate.findById(req.params.candidateId);
         if (!candidate) {
@@ -40,10 +46,11 @@ router.post('/candidate/:candidateId/client-feedback', async (req, res) => {
         }
 
         candidate.clientFeedback.push({
-            interviewerName,
-            company,
-            rating,
-            feedback,
+            interviewerName, interviewDateTime, positionAppliedFor, interviewStage,
+            educationalBackground, priorWorkExperience, technicalQualifications,
+            verbalCommunication, candidateInterest, teambuildingSkills,
+            overallRating, detailedComments, overallRecommendation,
+            keyStrengths, areasForImprovement,
             submittedAt: new Date()
         });
 

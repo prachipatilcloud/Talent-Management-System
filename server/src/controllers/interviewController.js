@@ -253,12 +253,18 @@ export const submitFeedback = async (req, res, next) => {
     try {
 
         const { id, roundId } = req.params;
-        const { comments, rating, recommendation } = req.body;
+        const { 
+            interviewerName, interviewDateTime, positionAppliedFor, interviewStage,
+            educationalBackground, priorWorkExperience, technicalQualifications,
+            verbalCommunication, candidateInterest, teambuildingSkills,
+            overallRating, detailedComments, overallRecommendation,
+            keyStrengths, areasForImprovement
+         } = req.body;
 
-        if (!rating || !recommendation) {
+        if (!overallRating || !overallRecommendation) {
             return res.status(400).json({
                 success: false,
-                message: "Rating and recommendation are required"
+                message: "Overall rating and recommendation are required"
             })
         }
 
@@ -294,9 +300,21 @@ export const submitFeedback = async (req, res, next) => {
         })
 
         round.feedback = {
-            rating,
-            recommendation,
-            comments: comments || '',
+            interviewerName,
+            interviewDateTime,
+            positionAppliedFor,
+            interviewStage,
+            educationalBackground,
+            priorWorkExperience,
+            technicalQualifications,
+            verbalCommunication,
+            candidateInterest,
+            teambuildingSkills,
+            overallRating,
+            detailedComments,
+            overallRecommendation,
+            keyStrengths,
+            areasForImprovement,
             submittedBy: req.user._id,
             submittedAt: new Date(),
         }
