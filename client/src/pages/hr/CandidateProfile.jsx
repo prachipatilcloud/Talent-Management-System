@@ -5,7 +5,7 @@ import {
     Box, Typography, Button, Avatar, IconButton,
     CircularProgress, Divider, Paper,
     Dialog, DialogContent, DialogTitle, MenuItem, TextField,
-    LinearProgress, Stack, Snackbar, Alert
+    LinearProgress, Stack, Snackbar, Alert, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import {
     ArrowBack, Email, Phone,
@@ -15,7 +15,7 @@ import {
     OpenInNew, InsertDriveFile, CalendarMonth,
     Edit, Videocam, Business, Close,
     GitHub, LinkedIn, Language,
-    MoreHoriz, Lock,
+    MoreHoriz, Lock, ExpandMore,
     Description, Archive as ArchiveIcon,
     ChevronRight, PlayArrow, WorkspacePremium
 } from '@mui/icons-material';
@@ -55,6 +55,10 @@ const recommendationConfig = {
     'No Hire': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: 'NO HIRE' },
     'Maybe': { bg: '#fefce8', color: '#a16207', border: '#fef08a', label: 'MAYBE' },
     'Hire - Strong': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'HIRE - STRONG' },
+    'Shortlisted': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'SHORTLISTED' },
+    'On-hold': { bg: '#fefce8', color: '#a16207', border: '#fef08a', label: 'ON-HOLD' },
+    'Rejected but can be re-approached in future': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: 'REJECTED (CAN RE-APPROACH)' },
+    'Rejected-Poor Rating': { bg: '#fef2f2', color: '#991b1b', border: '#fca5a5', label: 'REJECTED (POOR RATING)' }
 };
 
 const getAvatarColor = (name) => {
@@ -87,9 +91,9 @@ const getSkillStyle = (skillName) => {
     return skillColors[idx];
 };
 
-const StarRating = ({ value = 0 }) => (
-    <Box sx={{ display: 'flex', gap: 0.25 }}>
-        {[1, 2, 3, 4, 5].map(i => (
+const StarRating = ({ value = 0, max = 5 }) => (
+    <Box sx={{ display: 'flex', gap: 0.25, flexWrap: 'wrap' }}>
+        {Array.from({ length: max }, (_, i) => i + 1).map(i => (
             i <= Math.floor(value)
                 ? <Star key={i} sx={{ fontSize: 14, color: '#f59e0b' }} />
                 : i - 0.5 <= value
@@ -514,7 +518,7 @@ const CandidateProfile = () => {
                                     const isPassed = round.status === 'passed';
                                     const isRejected = round.status === 'rejected';
                                     const isActive = round.status === 'pending' || (idx === 0 && rounds.every(r => r.status === 'pending'));
-                                    const hasFeedback = round.feedback?.rating || round.feedback?.comments;
+                                    const hasFeedback = round.feedback?.overallRating || round.feedback?.rating || round.feedback?.comments || round.feedback?.detailedComments;
 
                                     return (
                                         <Box key={round._id || idx} sx={{ display: 'flex', gap: 3 }}>
@@ -569,22 +573,22 @@ const CandidateProfile = () => {
                                                                 </Box>
                                                             </Box>
                                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                                                                {round.feedback?.rating && <StarRating value={round.feedback.rating} />}
-                                                                {round.feedback?.recommendation && (
+                                                                {(round.feedback?.overallRating || round.feedback?.rating) && <StarRating value={round.feedback.overallRating || round.feedback.rating} max={round.feedback.overallRating ? 10 : 5} />}
+                                                                {(round.feedback?.overallRecommendation || round.feedback?.recommendation) && (
                                                                     <Typography sx={{
                                                                         px: 1, py: 0.2, borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900,
-                                                                        bgcolor: recommendationConfig[round.feedback.recommendation]?.bg || SUCCESS + '10',
-                                                                        color: recommendationConfig[round.feedback.recommendation]?.color || SUCCESS,
-                                                                        letterSpacing: '0.05em'
+                                                                        bgcolor: recommendationConfig[round.feedback.overallRecommendation || round.feedback.recommendation]?.bg || SUCCESS + '10',
+                                                                        color: recommendationConfig[round.feedback.overallRecommendation || round.feedback.recommendation]?.color || SUCCESS,
+                                                                        letterSpacing: '0.05em', whiteSpace: 'nowrap'
                                                                     }}>
-                                                                        {round.feedback.recommendation.toUpperCase()}
+                                                                        {(round.feedback.overallRecommendation || round.feedback.recommendation).toUpperCase()}
                                                                     </Typography>
                                                                 )}
                                                             </Box>
                                                         </Box>
 
                                                         {/* Sub-scores (Architecture/Testing bars as in image) */}
-                                                        {round.roundName === 'Technical Interview' && round.feedback?.rating && (
+                                                        {round.roundName === 'Technical Interview' && !round.feedback?.overallRating && round.feedback?.rating && (
                                                             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 2 }}>
                                                                 <Box>
                                                                     <Typography sx={{ fontSize: '0.625rem', fontWeight: 800, color: '#94a3b8', mb: 0.5, textTransform: 'uppercase' }}>Architecture</Typography>
@@ -597,9 +601,46 @@ const CandidateProfile = () => {
                                                             </Box>
                                                         )}
 
-                                                        {(round.notes || round.feedback?.comments) && (
-                                                            <Typography sx={{ fontSize: '0.875rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.6 }}>
-                                                                "{round.notes || round.feedback.comments}"
+                                                        {round.feedback?.overallRating && (
+                                                            <Accordion elevation={0} sx={{ mb: 2, bgcolor: 'transparent', '&:before': { display: 'none' }, border: '1px solid #e2e8f0', borderRadius: '12px !important' }}>
+                                                                <AccordionSummary expandIcon={<ExpandMore />} sx={{ px: 2, '& .MuiAccordionSummary-content': { my: 1.5 } }}>
+                                                                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: PRIMARY }}>View Detailed Ratings & Feedback</Typography>
+                                                                </AccordionSummary>
+                                                                <AccordionDetails sx={{ px: 2, pb: 2, pt: 0 }}>
+                                                                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+                                                                        {[
+                                                                            { title: 'Educational Background', val: round.feedback.educationalBackground },
+                                                                            { title: 'Prior Work Experience', val: round.feedback.priorWorkExperience },
+                                                                            { title: 'Technical Qualifications', val: round.feedback.technicalQualifications },
+                                                                            { title: 'Verbal Communication', val: round.feedback.verbalCommunication },
+                                                                            { title: 'Candidate Interest', val: round.feedback.candidateInterest },
+                                                                            { title: 'Teambuilding Skills', val: round.feedback.teambuildingSkills }
+                                                                        ].filter(i => i.val).map((item, idxx) => (
+                                                                            <Box key={idxx}>
+                                                                                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', mb: 0.5, textTransform: 'uppercase' }}>{item.title}</Typography>
+                                                                                <StarRating value={item.val} max={10} />
+                                                                            </Box>
+                                                                        ))}
+                                                                    </Box>
+                                                                    {round.feedback.keyStrengths && (
+                                                                        <Box sx={{ mb: 1.5 }}>
+                                                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#15803d', mb: 0.25, textTransform: 'uppercase' }}>Key Strengths</Typography>
+                                                                            <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>{round.feedback.keyStrengths}</Typography>
+                                                                        </Box>
+                                                                    )}
+                                                                    {round.feedback.areasForImprovement && (
+                                                                        <Box sx={{ mb: 1 }}>
+                                                                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#be123c', mb: 0.25, textTransform: 'uppercase' }}>Areas for Improvement</Typography>
+                                                                            <Typography sx={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>{round.feedback.areasForImprovement}</Typography>
+                                                                        </Box>
+                                                                    )}
+                                                                </AccordionDetails>
+                                                            </Accordion>
+                                                        )}
+
+                                                        {(round.notes || round.feedback?.comments || round.feedback?.detailedComments) && (
+                                                            <Typography sx={{ fontSize: '0.875rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.6, borderLeft: `3px solid ${PRIMARY}30`, pl: 1.5 }}>
+                                                                "{round.notes || round.feedback?.detailedComments || round.feedback?.comments}"
                                                             </Typography>
                                                         )}
                                                     </Box>

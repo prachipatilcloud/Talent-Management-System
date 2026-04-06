@@ -76,22 +76,25 @@ const interviewRoundSchema = new mongoose.Schema({
         default: null,
     },
     feedback: {
-        rating: {
-            type: Number,
-            min: 1,
-            max: 5,
-            default: null,
-        },
-        comments: {
+        interviewerName: String,
+        interviewDateTime: Date,
+        positionAppliedFor: String,
+        interviewStage: String,
+        educationalBackground: { type: Number, min: 1, max: 10 },
+        priorWorkExperience: { type: Number, min: 1, max: 10 },
+        technicalQualifications: { type: Number, min: 1, max: 10 },
+        verbalCommunication: { type: Number, min: 1, max: 10 },
+        candidateInterest: { type: Number, min: 1, max: 10 },
+        teambuildingSkills: { type: Number, min: 1, max: 10 },
+        overallRating: { type: Number, min: 1, max: 10 },
+        detailedComments: String,
+        overallRecommendation: {
             type: String,
-            default: null,
+            enum: ['Shortlisted', 'On-hold', 'Rejected but can be re-approached in future', 'Rejected-Poor Rating']
         },
-        recommendation: {
-            type: String,
-            enum: ['Hire', 'No Hire', 'Maybe', null],
-            default: null
-        },
-        submittedAt: { type: Date, default: null },
+        keyStrengths: String,
+        areasForImprovement: String,
+        submittedAt: { type: Date },
         submittedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -193,9 +196,23 @@ const candidateSchema = new mongoose.Schema({
 
     clientFeedback: [{
         interviewerName: String,
-        company: String,
-        rating: { type: Number, min: 1, max: 10 },
-        feedback: String,
+        interviewDateTime: Date,
+        positionAppliedFor: String,
+        interviewStage: String,
+        educationalBackground: { type: Number, min: 1, max: 10 },
+        priorWorkExperience: { type: Number, min: 1, max: 10 },
+        technicalQualifications: { type: Number, min: 1, max: 10 },
+        verbalCommunication: { type: Number, min: 1, max: 10 },
+        candidateInterest: { type: Number, min: 1, max: 10 },
+        teambuildingSkills: { type: Number, min: 1, max: 10 },
+        overallRating: { type: Number, min: 1, max: 10 },
+        detailedComments: String,
+        overallRecommendation: {
+            type: String,
+            enum: ['Shortlisted', 'On-hold', 'Rejected but can be re-approached in future', 'Rejected-Poor Rating']
+        },
+        keyStrengths: String,
+        areasForImprovement: String,
         submittedAt: { type: Date, default: Date.now }
     }],
 
