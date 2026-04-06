@@ -5,7 +5,7 @@ import {
     Box, Typography, Button, Avatar, IconButton,
     CircularProgress, Divider, Paper,
     Dialog, DialogContent, DialogTitle, MenuItem, TextField,
-    LinearProgress, Stack
+    LinearProgress, Stack, Snackbar, Alert
 } from '@mui/material';
 import {
     ArrowBack, Email, Phone,
@@ -163,6 +163,7 @@ const CandidateProfile = () => {
     const [interviewerOptions, setInterviewerOptions] = useState([]);
     const [rescheduleLoading, setRescheduleLoading] = useState(false);
     const [rescheduleError, setRescheduleError] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/hr';
 
@@ -625,6 +626,18 @@ const CandidateProfile = () => {
                                                                 sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#e2e8f0', color: '#475569', px: 3, borderRadius: '8px', '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' } }}>
                                                                 Reschedule
                                                             </Button>
+                                                            {round.roundName === 'Client Interview' && (
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    onClick={() => {
+                                                                        const link = `${window.location.origin}/client-interview/candidates/${candidate._id}`;
+                                                                        navigator.clipboard.writeText(link);
+                                                                        setSnackbarOpen(true);
+                                                                    }}
+                                                                    sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#10b981', color: '#10b981', px: 3, borderRadius: '8px', '&:hover': { bgcolor: '#ecfdf5', borderColor: '#059669' } }}>
+                                                                    Copy Client Interview Link
+                                                                </Button>
+                                                            )}
                                                         </Box>
                                                     </Box>
                                                 )}
@@ -681,6 +694,17 @@ const CandidateProfile = () => {
                     </Box>
                 </DialogContent>
             </Dialog>
+
+            <Snackbar 
+                open={snackbarOpen} 
+                autoHideDuration={3000} 
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+                    Link copied!
+                </Alert>
+            </Snackbar>
 
         </Box>
     );

@@ -26,7 +26,7 @@ export const addInterviewRound = async (req, res, next) => {
                 message: 'Scheduled date is required'
             });
         }
-        if (!interviewers || interviewers.length === 0) {
+        if (roundName !== 'Client Interview' && (!interviewers || interviewers.length === 0)) {
             return res.status(400).json({
                 success: false,
                 message: 'At least one interviewer is required'

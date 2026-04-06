@@ -13,6 +13,7 @@ import interviewerRoute from './routes/interviewerRoute.js';
 import notificationRoute from './routes/notificationRoute.js';
 import resumeRoute from './routes/resumeRoute.js';
 import parserRoute from './routes/parserRoute.js';
+import publicRoutes from './routes/publicRoutes.js';
 
 const app = express();
 
@@ -38,5 +39,6 @@ app.use('/api/interviewer', interviewerRoute);
 app.use('/api/notifications', notificationRoute);
 app.use("/api/resumes", resumeRoute);
 app.use("/api/parser", parserRoute);
+app.use("/api/public", publicRoutes);
 
 export default app;

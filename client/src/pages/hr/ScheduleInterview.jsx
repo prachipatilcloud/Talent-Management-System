@@ -20,14 +20,14 @@ const TIME_SLOTS = [
 ]
 
 const ROUND_NAMES = [
-  'Initial Screening',
   'Technical Interview',
+  'Client Interview',
   'HR Interview',
 ];
 
 const ROUND_SEQUENCE = [
-  'Initial Screening',
   'Technical Interview',
+  'Client Interview',
   'HR Interview',
 ]
 
@@ -47,7 +47,7 @@ const ScheduleInterview = () => {
 
   const getNextRound = () => {
     const lastRound = prefilled.lastRoundName;
-    if(!lastRound) return 'Initial Screening';
+    if(!lastRound) return 'Technical Interview';
     const currentIdx = ROUND_SEQUENCE.indexOf(lastRound);
     if(currentIdx === -1 || currentIdx === ROUND_SEQUENCE.length - 1) return '';
     return ROUND_SEQUENCE[currentIdx + 1];
@@ -136,7 +136,7 @@ const ScheduleInterview = () => {
     if (!form.roundName) errs.roundName = 'Round name is required';
     if (!form.date) errs.date = 'Date is required';
     if (!form.timeSlot) errs.timeSlot = 'Time slot is required';
-    if (interviewers.length === 0) errs.interviewers = 'Add at least one interviewer';
+    if (form.roundName !== 'Client Interview' && interviewers.length === 0) errs.interviewers = 'Add at least one interviewer';
     if (form.mode === 'Remote' && !form.meetingLink.trim())
       errs.meetingLink = 'Meeting link is required for remote interviews';
     return errs;

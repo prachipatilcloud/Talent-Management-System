@@ -191,6 +191,14 @@ const candidateSchema = new mongoose.Schema({
         default: 'Applied'
     },
 
+    clientFeedback: [{
+        interviewerName: String,
+        company: String,
+        rating: { type: Number, min: 1, max: 10 },
+        feedback: String,
+        submittedAt: { type: Date, default: Date.now }
+    }],
+
     // Interview Rounds (embedded)
     interviewRounds: [interviewRoundSchema],
 

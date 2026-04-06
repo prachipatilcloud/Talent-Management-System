@@ -17,7 +17,7 @@ import HRDashboard from './pages/hr/HRDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AddHR from './components/users/AddHR'
 import AddInterviewer from './components/users/AddInterviewer'
-
+import ClientInterviewCandidate from './pages/ClientInterviewCandidate'
 
 function App() {
   return (
@@ -27,6 +27,9 @@ function App() {
 
           <Route path='/' element={<Navigate to='/login' replace />} />
           <Route path='/login' element={<LoginPage />} />
+
+          {/* Public Client Interview Route */}
+          <Route path='/client-interview/candidates/:id' element={<ClientInterviewCandidate />} />
 
           {/* ── HR ROUTES ── */}
           <Route
