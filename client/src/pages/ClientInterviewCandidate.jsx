@@ -164,7 +164,7 @@ const ClientInterviewCandidate = () => {
                         initialData={{ 
                             candidateName: `${firstName} ${lastName}`, 
                             positionAppliedFor: jobRole, 
-                            interviewStage: 'Client Interview' 
+                            interviewStage: 'Round 3' 
                         }}
                     />
                 )}

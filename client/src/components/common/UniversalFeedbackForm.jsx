@@ -4,6 +4,7 @@ import {
     RadioGroup, FormControlLabel, Radio, Paper, Grid
 } from '@mui/material';
 import StarRating10 from './StarRating10';
+import { ROUND_NAMES } from '../../constants/roundConstants';
 
 const PRIMARY = '#3b4eba';
 
@@ -141,7 +142,7 @@ const UniversalFeedbackForm = ({
                             5. Interview Stage
                         </Typography>
                         <RadioGroup row value={form.interviewStage}>
-                            {['Round 1', 'Round 2', 'Round 3', 'Client Interview', 'Technical Interview', 'HR Interview', form.interviewStage]
+                            {[...ROUND_NAMES, form.interviewStage]
                                 .filter((v, i, a) => a.indexOf(v) === i && v)
                                 .map(stage => (
                                     <FormControlLabel 

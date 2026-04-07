@@ -20,6 +20,7 @@ import {
     ChevronRight, PlayArrow, WorkspacePremium
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { ROUND_LABEL_TO_TYPE } from '../../constants/roundConstants';
 
 // ── Constants & Config ───────────────────────────────────────────
 const PRIMARY = '#3b4eba';
@@ -588,7 +589,7 @@ const CandidateProfile = () => {
                                                         </Box>
 
                                                         {/* Sub-scores (Architecture/Testing bars as in image) */}
-                                                        {round.roundName === 'Technical Interview' && !round.feedback?.overallRating && round.feedback?.rating && (
+                                                        {ROUND_LABEL_TO_TYPE[round.roundName] === 'technical' && !round.feedback?.overallRating && round.feedback?.rating && (
                                                             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 2 }}>
                                                                 <Box>
                                                                     <Typography sx={{ fontSize: '0.625rem', fontWeight: 800, color: '#94a3b8', mb: 0.5, textTransform: 'uppercase' }}>Architecture</Typography>
@@ -667,7 +668,7 @@ const CandidateProfile = () => {
                                                                 sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#e2e8f0', color: '#475569', px: 3, borderRadius: '8px', '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' } }}>
                                                                 Reschedule
                                                             </Button>
-                                                            {round.roundName === 'Client Interview' && (
+                                                            {ROUND_LABEL_TO_TYPE[round.roundName] === 'client' && (
                                                                 <Button
                                                                     variant="outlined"
                                                                     onClick={() => {
