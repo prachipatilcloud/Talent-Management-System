@@ -26,7 +26,8 @@ export const addInterviewRound = async (req, res, next) => {
                 message: 'Scheduled date is required'
             });
         }
-        if (roundName !== 'Client Interview' && (!interviewers || interviewers.length === 0)) {
+        // Round 3 is the Client Interview type - no interviewers required
+        if (roundName !== 'Round 3' && (!interviewers || interviewers.length === 0)) {
             return res.status(400).json({
                 success: false,
                 message: 'At least one interviewer is required'
@@ -280,11 +281,11 @@ export const submitFeedback = async (req, res, next) => {
             message: "Interview Round not found"
         })
 
-        // ── Role-based access control: Only HR can give feedback on Initial Screening ──
-        if (round.roundName === 'Initial Screening' && req.user.role !== 'hr') {
+        // ── Role-based access control: Only HR can give feedback on Round 4 (HR Interview) ──
+        if (round.roundName === 'Round 4' && req.user.role !== 'hr') {
             return res.status(403).json({
                 success: false,
-                message: "Only HR can provide feedback for Initial Screening round"
+                message: "Only HR can provide feedback for Round 4 (HR Interview)"
             })
         }
 

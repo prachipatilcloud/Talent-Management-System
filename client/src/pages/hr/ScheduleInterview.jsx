@@ -3,6 +3,7 @@ import API from '../../api/axios';
 import { Autocomplete, Avatar, Box, Button, CircularProgress, IconButton, InputAdornment, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ROUND_NAMES, ROUND_SEQUENCE, ROUND_LABEL_TO_TYPE } from '../../constants/roundConstants';
 
 
 const PRIMARY = '#3b4eba';
@@ -17,18 +18,6 @@ const TIME_SLOTS = [
   '3:00 PM - 4:00 PM',
   '4:00 PM - 5:00 PM',
   '5:00 PM - 6:00 PM'
-]
-
-const ROUND_NAMES = [
-  'Technical Interview',
-  'Client Interview',
-  'HR Interview',
-];
-
-const ROUND_SEQUENCE = [
-  'Technical Interview',
-  'Client Interview',
-  'HR Interview',
 ]
 
 const getAvatarColor = (name) => {
@@ -47,7 +36,7 @@ const ScheduleInterview = () => {
 
   const getNextRound = () => {
     const lastRound = prefilled.lastRoundName;
-    if(!lastRound) return 'Technical Interview';
+    if(!lastRound) return 'Round 1';
     const currentIdx = ROUND_SEQUENCE.indexOf(lastRound);
     if(currentIdx === -1 || currentIdx === ROUND_SEQUENCE.length - 1) return '';
     return ROUND_SEQUENCE[currentIdx + 1];
@@ -89,11 +78,12 @@ const ScheduleInterview = () => {
 
   //fetch interviewers options
   useEffect(() => {
-    const role = form.roundName === 'Technical Interview' ? 'interviewer' : 'hr';
+    const roundType = ROUND_LABEL_TO_TYPE[form.roundName];
+    const role = roundType === 'technical' ? 'interviewer' : 'hr';
     API.get(`/users?role=${role}&limit=100`)
       .then(res => setInterviewerOptions(res.data.data || []))
       .catch(() => setInterviewerOptions([]));
-  }, []);
+  }, [form.roundName]);
 
   //search candidates by name
   useEffect(() => {
@@ -136,7 +126,8 @@ const ScheduleInterview = () => {
     if (!form.roundName) errs.roundName = 'Round name is required';
     if (!form.date) errs.date = 'Date is required';
     if (!form.timeSlot) errs.timeSlot = 'Time slot is required';
-    if (form.roundName !== 'Client Interview' && interviewers.length === 0) errs.interviewers = 'Add at least one interviewer';
+    const roundType = ROUND_LABEL_TO_TYPE[form.roundName];
+    if (roundType !== 'client' && interviewers.length === 0) errs.interviewers = 'Add at least one interviewer';
     if (form.mode === 'Remote' && !form.meetingLink.trim())
       errs.meetingLink = 'Meeting link is required for remote interviews';
     return errs;

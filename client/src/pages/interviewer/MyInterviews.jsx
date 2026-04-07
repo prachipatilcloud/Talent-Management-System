@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Business, CalendarMonth, ChevronRight, HourglassEmpty, People, Schedule, TaskAlt, Videocam } from '@mui/icons-material';
+import { ROUND_COLOR_CONFIG } from '../../constants/roundConstants';
 
 const PRIMARY = '#3b4eba';
 
@@ -22,10 +23,10 @@ const formatDayHeader = (dateStr) => {
 };
 
 const roundTypeConfig = {
-  'Initial Screening': { bg: '#eff6ff', color: '#1d4ed8' },
-  'Technical Interview': { bg: '#eef2ff', color: '#4338ca' },
-  'HR Interview': { bg: '#f0fdf4', color: '#15803d' },
-  'Final Round': { bg: '#faf5ff', color: '#7e22ce' },
+  'Round 1': { bg: '#eef2ff', color: '#4338ca' },
+  'Round 2': { bg: '#eef2ff', color: '#4338ca' },
+  'Round 3': { bg: '#faf5ff', color: '#7e22ce' },
+  'Round 4': { bg: '#f0fdf4', color: '#15803d' },
 };
 
 const groupByDate = (interviews) => {
