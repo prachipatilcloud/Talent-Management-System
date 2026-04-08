@@ -76,23 +76,14 @@ const Layout = () => {
                         <Box>
                             <Typography sx={{
                                 color: 'white',
-                                fontWeight: 800, fontSize: '1.25rem',
+                                fontWeight: 650, fontSize: '1.25rem',
                                 whiteSpace: 'nowrap',
                                 lineHeight: 1,
                                 fontFamily: "'Manrope', sans-serif"
                             }}>
                                 TalentFlow
                             </Typography>
-                            <Typography sx={{ 
-                                color: 'rgba(255,255,255,0.6)', 
-                                fontSize: '10px', 
-                                fontWeight: 700, 
-                                textTransform: 'uppercase', 
-                                letterSpacing: '0.1em',
-                                mt: 0.5
-                            }}>
-                                Clinical Curator
-                            </Typography>
+
                         </Box>
                     )}
                 </Box>
