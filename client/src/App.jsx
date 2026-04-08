@@ -18,6 +18,8 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AddHR from './components/users/AddHR'
 import AddInterviewer from './components/users/AddInterviewer'
 import ClientInterviewCandidate from './pages/ClientInterviewCandidate'
+import Report from './pages/hr/Report'
+import CandidateReport from './pages/hr/CandidateReport'
 
 function App() {
   return (
@@ -46,6 +48,8 @@ function App() {
             <Route path='candidates/add' element={<AddCandidate />} />
             <Route path='candidates/edit/:id' element={<EditCandidate />} />
             <Route path='candidates/filter' element={<AdvancedFilterPage />} />
+            <Route path='reports' element={<Report />} />
+            <Route path='reports/:id' element={<CandidateReport />} />
             <Route path='candidates/:id/schedule-interview' element={<ScheduleInterview />} />
             <Route path='candidates/:id/rounds/:roundId/notes' element={<AddNotes />} />
             <Route path='candidates/:id' element={<CandidateProfile />} />
@@ -85,6 +89,8 @@ function App() {
             <Route path='candidates/add' element={<AddCandidate />} />
             <Route path='candidates/edit/:id' element={<EditCandidate />} />
             <Route path='candidates/:id' element={<CandidateProfile />} />
+            <Route path='reports' element={<Report />} />
+            <Route path='reports/:id' element={<CandidateReport />} />
             <Route path='add-hr' element={<AddHR />} />
             <Route path='add-interviewer' element={<AddInterviewer />} />
           

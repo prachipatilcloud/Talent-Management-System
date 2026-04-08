@@ -14,6 +14,7 @@ import notificationRoute from './routes/notificationRoute.js';
 import resumeRoute from './routes/resumeRoute.js';
 import parserRoute from './routes/parserRoute.js';
 import publicRoutes from './routes/publicRoutes.js';
+import reportsRoute from './routes/reportsRoutes.js';
 
 const app = express();
 
@@ -40,5 +41,6 @@ app.use('/api/notifications', notificationRoute);
 app.use("/api/resumes", resumeRoute);
 app.use("/api/parser", parserRoute);
 app.use("/api/public", publicRoutes);
+app.use("/api/reports", reportsRoute);
 
 export default app;

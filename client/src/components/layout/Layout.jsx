@@ -1,4 +1,4 @@
-import { AccountTree, CalendarToday, Dashboard, Logout, People } from "@mui/icons-material";
+import { AccountTree, BarChart, CalendarToday, Dashboard, Logout, People } from "@mui/icons-material";
 import { Avatar, Box, Tooltip, Typography } from "@mui/material"
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -9,9 +9,11 @@ const PRIMARY = '#3b4eba';
 const navItems = [
     { label: 'Dashboard', icon: <Dashboard />, path: '/hr/dashboard', roles: ['hr'] },
     { label: 'Candidates', icon: <People />, path: '/hr/candidates', roles: ['hr'] },
+    { label: 'Reports', icon: <BarChart />, path: '/hr/reports', roles: ['hr'] },
     { label: 'Interviews', icon: <CalendarToday />, path: '/hr/schedule-interview', roles: ['hr'] },
     { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard', roles: ['admin'] },
     { label: 'Candidates', icon: <People />, path: '/admin/candidates', roles: ['admin'] },
+    { label: 'Reports', icon: <BarChart />, path: '/admin/reports', roles: ['admin'] },
     { label: 'Interviewers', icon: <CalendarToday />, path: '/admin/interviewers', roles: ['admin'] },
     { label: 'Dashboard', icon: <Dashboard />, path: '/interviewer/dashboard', roles: ['interviewer'] },
     { label: 'My Interviews', icon: <CalendarToday />, path: '/interviewer/my-interviews', roles: ['interviewer'] },
@@ -51,32 +53,47 @@ const Layout = () => {
 
                 {/* Logo */}
                 <Box sx={{
-                    p: 2.5,
+                    px: 3,
+                    py: 4,
                     display: "flex",
                     alignItems: 'center',
                     gap: 1.5,
                     cursor: 'pointer',
-                    minHeight: 64,
+                    minHeight: 80,
                 }}
                     onClick={() => setExpanded(!expanded)}
                 >
                     <Box sx={{
-                        bgcolor: 'rgba(255,255,255,0.2)',
+                        bgcolor: 'white',
                         borderRadius: '8px',
                         p: 0.75,
                         display: "flex",
                         flexShrink: 0,
                     }}>
-                        <AccountTree sx={{ color: 'white', fontSize: 22 }} />
+                        <AccountTree sx={{ color: PRIMARY, fontSize: 24 }} />
                     </Box>
                     {expanded && (
-                        <Typography sx={{
-                            color: 'white',
-                            fontWeight: 700, fontSize: '1.1rem',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            TalentFlow
-                        </Typography>
+                        <Box>
+                            <Typography sx={{
+                                color: 'white',
+                                fontWeight: 800, fontSize: '1.25rem',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1,
+                                fontFamily: "'Manrope', sans-serif"
+                            }}>
+                                TalentFlow
+                            </Typography>
+                            <Typography sx={{ 
+                                color: 'rgba(255,255,255,0.6)', 
+                                fontSize: '10px', 
+                                fontWeight: 700, 
+                                textTransform: 'uppercase', 
+                                letterSpacing: '0.1em',
+                                mt: 0.5
+                            }}>
+                                Clinical Curator
+                            </Typography>
+                        </Box>
                     )}
                 </Box>
 
@@ -184,7 +201,7 @@ const Layout = () => {
             </Box>
 
             {/* Main Content */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: "column", overflow: "auto", minWidth: 0 }}>
                 <Outlet />
             </Box>
         </Box>
