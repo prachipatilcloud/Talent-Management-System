@@ -59,11 +59,17 @@ def require_roles(allowed_roles: list):
 
 
 # ------------------ MONGODB ------------------
-client = MongoClient("mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = client["resume_db"]
 collection = db["resumes"]
 
-collection.create_index("skills")
+# Lazy index creation to avoid startup crash
+try:
+    # We do a quick check but don't block the whole app if it fails
+    collection.create_index("skills")
+except Exception as e:
+    print(f"⚠️ Warning: Could not create MongoDB index on startup: {e}")
 
 # ------------------ DOCLING ------------------
 converter = None
