@@ -7,14 +7,14 @@ import Candidate from "../models/Candidate.js";
 export const getReportsSummary = async (req, res, next) => {
     try {
         const totalCandidates = await Candidate.countDocuments();
-        
+
         // Average rating across all candidates who have feedback
         const avgResult = await Candidate.aggregate([
             { $unwind: "$interviewRounds" },
             { $match: { "interviewRounds.feedback.overallRating": { $exists: true, $ne: null } } },
             { $group: { _id: null, avgRating: { $avg: "$interviewRounds.feedback.overallRating" } } }
         ]);
-        
+
         const avgRating = avgResult.length > 0 ? avgResult[0].avgRating.toFixed(1) : 0;
 
         // Shortlisted this month
@@ -90,11 +90,11 @@ export const getCandidatesReportList = async (req, res, next) => {
             const feedbacks = c.interviewRounds
                 .filter(r => r.feedback && r.feedback.overallRating)
                 .map(r => r.feedback);
-            
-            const avgRating = feedbacks.length > 0 
+
+            const avgRating = feedbacks.length > 0
                 ? (feedbacks.reduce((sum, f) => sum + f.overallRating, 0) / feedbacks.length).toFixed(1)
                 : 0;
-            
+
             const roundsCleared = c.interviewRounds.filter(r => r.status === 'passed').length;
             const totalRounds = c.interviewRounds.length;
 
@@ -144,8 +144,8 @@ export const getCandidateDetailedReport = async (req, res, next) => {
         const feedbacks = candidate.interviewRounds
             .filter(r => r.feedback && r.feedback.overallRating)
             .map(r => r.feedback);
-        
-        const avgOverallScore = feedbacks.length > 0 
+
+        const avgOverallScore = feedbacks.length > 0
             ? (feedbacks.reduce((sum, f) => sum + f.overallRating, 0) / feedbacks.length).toFixed(1)
             : 0;
 

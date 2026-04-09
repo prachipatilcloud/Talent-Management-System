@@ -82,7 +82,7 @@ function App() {
                 <Layout />
               </ProtectedRoute>
             }
-            >
+          >
             <Route index element={<Navigate to='dashboard' replace />} />
             <Route path='dashboard' element={<AdminDashboard />} />
             <Route path='candidates' element={<CandidatesPage />} />
@@ -93,7 +93,7 @@ function App() {
             <Route path='reports/:id' element={<CandidateReport />} />
             <Route path='add-hr' element={<AddHR />} />
             <Route path='add-interviewer' element={<AddInterviewer />} />
-          
+
           </Route>
 
         </Routes>
