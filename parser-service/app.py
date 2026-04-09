@@ -17,10 +17,28 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    error_msg = str(exc)
+    print(f"🔥 Global Error Handler: {error_msg}")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"success": False, "error": f"Internal Server Error: {error_msg}"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
+from fastapi.responses import JSONResponse
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -59,7 +77,7 @@ def require_roles(allowed_roles: list):
 
 
 # ------------------ MONGODB ------------------
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/")
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = client["resume_db"]
 collection = db["resumes"]
@@ -185,20 +203,33 @@ JSON:
 
 # ------------------ CLEAN JSON ------------------
 def clean_json(text):
+    # Strip markdown code block wrappers that mistral adds
+    text = text.strip()
+    if text.startswith("```"):
+        # Remove ```json or ``` at start
+        text = re.sub(r'^```(?:json)?\s*', '', text)
+        # Remove ``` at end
+        text = re.sub(r'\s*```$', '', text)
+        text = text.strip()
+
+    # Try direct parse first
     try:
         return json.loads(text)
     except:
-        try:
-            start = text.find("{")
-            end = text.rfind("}")
-            if start != -1 and end != -1:
-                return json.loads(text[start:end+1])
-        except:
-            pass
+        pass
 
-    return {"error": "Invalid JSON", "raw": text}
+    # Try extracting JSON object from surrounding text
+    try:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            return json.loads(text[start:end + 1])
+    except:
+        pass
 
-
+    # Log what we got so you can debug
+    print("❌ clean_json failed. Raw text preview:", text[:500])
+    return {"error": "Invalid JSON", "raw": text[:500]}
 # ------------------ SKILL NORMALIZATION ------------------
 def normalize_skills(skills):
     mapping = {
@@ -218,53 +249,65 @@ def normalize_skills(skills):
 async def parse_resume(
     file: UploadFile = File(...)
 ):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    try:
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    text = extract_text(file_path)[:6000]
-    print("Extracted Text:", text[:500])
+        text = extract_text(file_path)[:4000]
+        print(f"✅ Extracted Text Length: {len(text)}")
+        if not text:
+            raise Exception("No text could be extracted from this document")
 
-    # Step 1: Regex extraction (reliable for name/email/phone)
-    regex_data = extract_with_regex(text)
-    print("Regex extracted:", regex_data)
+        # Step 1: Regex extraction (reliable for name/email/phone)
+        regex_data = extract_with_regex(text)
+        print("🔍 Regex extracted:", regex_data)
 
-    # Step 2: LLM extraction (skills/experience/projects)
-    prompt = build_prompt(text)
-    print("Prompt Length:", len(prompt))
+        # Step 2: LLM extraction (skills/experience/projects)
+        prompt = build_prompt(text)
+        print(f"🤖 Calling LLM (phi3:mini)... Prompt Length: {len(prompt)}")
 
-    result = call_ollama(prompt)
-    llm_data = clean_json(result)
-    print("LLM extracted keys:", list(llm_data.keys()) if isinstance(llm_data, dict) else "error")
+        result = call_ollama(prompt)
+        llm_data = clean_json(result)
+        print("✅ LLM response received")
 
-    # Step 3: Normalize skills
-    skills = normalize_skills(llm_data.get("skills", []))
+        # Step 3: Normalize skills
+        skills = normalize_skills(llm_data.get("skills", []))
 
-    # Step 4: Merge — regex values always override LLM values
-    final = {
-        "name": regex_data["name"] or llm_data.get("name"),
-        "email": regex_data["email"] or llm_data.get("email"),
-        "phone": regex_data["phone"] or llm_data.get("phone"),
-        "github": regex_data["github"] or llm_data.get("github"),
-        "linkedin": regex_data["linkedin"] or llm_data.get("linkedin"),
-        "portfolio": regex_data["portfolio"] or llm_data.get("portfolio"),
-        "skills": skills,
-        "experience": llm_data.get("experience", []),
-        "projects": llm_data.get("projects", []),
-        "target_role": llm_data.get("target_role"),
-    }
+        # Step 4: Merge — regex values always override LLM values
+        final = {
+            "name": regex_data["name"] or llm_data.get("name"),
+            "email": regex_data["email"] or llm_data.get("email"),
+            "phone": regex_data["phone"] or llm_data.get("phone"),
+            "github": regex_data["github"] or llm_data.get("github"),
+            "linkedin": regex_data["linkedin"] or llm_data.get("linkedin"),
+            "portfolio": regex_data["portfolio"] or llm_data.get("portfolio"),
+            "skills": skills,
+            "experience": llm_data.get("experience", []),
+            "projects": llm_data.get("projects", []),
+            "target_role": llm_data.get("target_role"),
+        }
 
-    # Step 5: Save to MongoDB (use a copy so _id doesn't leak into response)
-    doc_to_save = {
-        **final,
-        "uploaded_at": datetime.utcnow(),
-    }
-    collection.insert_one(doc_to_save)
+        # Step 5: Save to MongoDB (with error handling so it doesn't block response)
+        try:
+            doc_to_save = {
+                **final,
+                "uploaded_at": datetime.utcnow(),
+            }
+            collection.insert_one(doc_to_save)
+            print("💾 Saved to MongoDB")
+        except Exception as db_err:
+            print(f"⚠️ Warning: Could not save to MongoDB: {db_err}")
 
-    print("Final merged data:", json.dumps(final, indent=2, default=str))
+        return {"success": True, "data": final}
 
-    return {"success": True, "data": final}
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        print(f"❌ Critical Error in /parse: {error_msg}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {error_msg}")
 
 
 # ------------------ SEARCH (HR / ADMIN / INTERVIEWER) ------------------

@@ -16,7 +16,7 @@ const ClientInterviewCandidate = () => {
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    
+
     const [submitting, setSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [submitError, setSubmitError] = useState('');
@@ -43,7 +43,7 @@ const ClientInterviewCandidate = () => {
         try {
             await API.post(`/public/candidate/${id}/client-feedback`, formData);
             setSubmitSuccess(true);
-        } catch(err) {
+        } catch (err) {
             setSubmitError('Failed to submit feedback. Please try again later.');
             console.error(err);
         } finally {
@@ -61,7 +61,7 @@ const ClientInterviewCandidate = () => {
 
     if (error || !candidate) {
         return (
-             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f8fafc' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f8fafc' }}>
                 <Typography color="error" variant="h6">{error || 'Candidate not found'}</Typography>
             </Box>
         );
@@ -74,7 +74,7 @@ const ClientInterviewCandidate = () => {
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', py: 5, px: 2 }}>
             <Box sx={{ maxWidth: 800, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                
+
                 {/* Header Profile */}
                 <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0', bgcolor: 'white' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -92,10 +92,10 @@ const ClientInterviewCandidate = () => {
                                 {jobRole}
                             </Typography>
                             {resume?.url && (
-                                <Button 
-                                    variant="outlined" 
-                                    size="small" 
-                                    href={resume.url} 
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    href={resume.url}
                                     target="_blank"
                                     sx={{ mt: 1.5, textTransform: 'none', borderRadius: '8px' }}
                                 >
@@ -110,7 +110,7 @@ const ClientInterviewCandidate = () => {
                             <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', mb: 1 }}>KEY SKILLS</Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {skills.map(skill => (
-                                      <Box key={skill} sx={{
+                                    <Box key={skill} sx={{
                                         px: 1.5, py: 0.5, borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700,
                                         bgcolor: '#f1f5f9', color: '#475569', border: `1px solid #e2e8f0`
                                     }}>
@@ -135,9 +135,9 @@ const ClientInterviewCandidate = () => {
                                     </Typography>
                                 </Box>
                                 {(round.status === 'passed' && round.feedback?.rating) && (
-                                     <Typography sx={{ fontSize: '0.875rem', color: '#475569', mt: 1 }}>
-                                         Rating: {round.feedback.rating} / 5
-                                     </Typography>
+                                    <Typography sx={{ fontSize: '0.875rem', color: '#475569', mt: 1 }}>
+                                        Rating: {round.feedback.rating} / 5
+                                    </Typography>
                                 )}
                             </Box>
                         )) : (
@@ -161,10 +161,10 @@ const ClientInterviewCandidate = () => {
                         submitting={submitting}
                         error={submitError}
                         onSubmit={handleSubmit}
-                        initialData={{ 
-                            candidateName: `${firstName} ${lastName}`, 
-                            positionAppliedFor: jobRole, 
-                            interviewStage: 'Round 3' 
+                        initialData={{
+                            candidateName: `${firstName} ${lastName}`,
+                            positionAppliedFor: jobRole,
+                            interviewStage: 'Round 3'
                         }}
                     />
                 )}

@@ -120,7 +120,7 @@ const AddCandidate = () => {
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://127.0.0.1:8001/parse', {
+      const response = await fetch('http://localhost:8001/parse', {
         method: 'POST',
         body: formData,
       });
