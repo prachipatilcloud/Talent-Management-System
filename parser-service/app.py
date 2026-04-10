@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +11,7 @@ import os
 import re
 import json
 import jwt
-from model import call_ollama
+from model import call_gemini
 
 # ------------------ APP INIT ------------------
 app = FastAPI()
@@ -203,33 +205,14 @@ JSON:
 
 # ------------------ CLEAN JSON ------------------
 def clean_json(text):
-    # Strip markdown code block wrappers that mistral adds
-    text = text.strip()
-    if text.startswith("```"):
-        # Remove ```json or ``` at start
-        text = re.sub(r'^```(?:json)?\s*', '', text)
-        # Remove ``` at end
-        text = re.sub(r'\s*```$', '', text)
-        text = text.strip()
-
-    # Try direct parse first
     try:
         return json.loads(text)
-    except:
-        pass
+    except Exception as e:
+        print(f"❌ clean_json failed: {e}")
+        print(f"Raw preview: {text[:400]}")
+        return {"error": "Invalid JSON", "raw": text[:400]}
 
-    # Try extracting JSON object from surrounding text
-    try:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            return json.loads(text[start:end + 1])
-    except:
-        pass
 
-    # Log what we got so you can debug
-    print("❌ clean_json failed. Raw text preview:", text[:500])
-    return {"error": "Invalid JSON", "raw": text[:500]}
 # ------------------ SKILL NORMALIZATION ------------------
 def normalize_skills(skills):
     mapping = {
@@ -266,9 +249,9 @@ async def parse_resume(
 
         # Step 2: LLM extraction (skills/experience/projects)
         prompt = build_prompt(text)
-        print(f"🤖 Calling LLM (phi3:mini)... Prompt Length: {len(prompt)}")
+        print(f"🤖 Calling LLM (mistral:7b)... Prompt Length: {len(prompt)}")
 
-        result = call_ollama(prompt)
+        result = call_gemini(prompt)
         llm_data = clean_json(result)
         print("✅ LLM response received")
 
